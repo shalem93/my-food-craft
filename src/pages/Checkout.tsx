@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 const Checkout = () => {
   const { items, total, clear } = useCart();
@@ -58,7 +59,21 @@ const Checkout = () => {
                 <Input id="cvv" placeholder="123" />
               </div>
             </div>
-            <Button className="mt-2" onClick={() => { alert("Order placed! (Demo)"); clear(); }}>Place order</Button>
+            <Button className="mt-2" disabled={items.length === 0} onClick={async () => {
+              try {
+                const { data, error } = await supabase.functions.invoke('create-payment', {
+                  body: { items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })) }
+                });
+                if (error) throw error;
+                if (data?.url) {
+                  window.open(data.url, '_blank');
+                } else {
+                  alert('Could not start checkout.');
+                }
+              } catch (e: any) {
+                alert(`Payment error: ${e.message || e}`);
+              }
+            }}>Place order</Button>
           </div>
         </section>
         <aside className="space-y-4">

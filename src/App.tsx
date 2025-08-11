@@ -9,6 +9,9 @@ import NotFound from "./pages/NotFound";
 import Chef from "./pages/Chef";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCanceled from "./pages/PaymentCanceled";
+
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -28,6 +31,8 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chef/:slug" element={<Chef />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/payment-canceled" element={<PaymentCanceled />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
