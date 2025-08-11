@@ -17,6 +17,14 @@ const HeaderNav = () => {
           <a href="#chefs" className="text-muted-foreground hover:text-foreground transition-colors">Chefs</a>
           <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
         </div>
+        <div className="hidden md:flex items-center gap-3">
+          <Link to="/auth">
+            <Button variant="ghost" size="sm" aria-label="Sign in">Sign in</Button>
+          </Link>
+          <Link to="/auth">
+            <Button size="sm" aria-label="Create account">Sign up</Button>
+          </Link>
+        </div>
       </nav>
     </header>
   );

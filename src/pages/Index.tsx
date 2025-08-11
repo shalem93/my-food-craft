@@ -4,8 +4,54 @@ import Hero from "@/components/site/Hero";
 import ChefCard from "@/components/site/ChefCard";
 import CartSheet from "@/components/site/CartSheet";
 import { chefs } from "@/data/chefs";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+
+function haversine(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 6371; // km
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLon = Math.sin(dLon / 2);
+  const c = 2 * Math.asin(Math.sqrt(sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon));
+  return R * c;
+}
 
 const Index = () => {
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [radius, setRadius] = useState(15); // km
+  const [geoDenied, setGeoDenied] = useState(false);
+
+  const sorted = useMemo(() => {
+    if (!coords) return chefs;
+    return [...chefs]
+      .map((c) => ({
+        ...c,
+        _distance: c.lat && c.lng ? haversine(coords, { lat: c.lat, lng: c.lng }) : Infinity,
+      }))
+      .filter((c) => (c as any)._distance <= radius)
+      .sort((a: any, b: any) => a._distance - b._distance);
+  }, [coords, radius]);
+
+  const useMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setGeoDenied(true);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoDenied(false);
+      },
+      () => setGeoDenied(true),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   return (
     <div>
       <Helmet>
@@ -23,10 +69,31 @@ const Index = () => {
             <h2 className="text-2xl md:text-3xl font-bold">Featured chefs</h2>
             <p className="text-sm text-muted-foreground">Handpicked kitchens near you</p>
           </div>
+
+          <div className="mb-6 rounded-xl border bg-card p-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Find chefs near you</p>
+              <p className="text-xs text-muted-foreground">Use your location and radius to filter results.</p>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Button variant="secondary" onClick={useMyLocation}>Use my location</Button>
+              <div className="w-full md:w-64">
+                <p className="text-xs text-muted-foreground mb-1">Radius: {radius} km</p>
+                <Slider value={[radius]} onValueChange={(v) => setRadius(v[0])} min={5} max={50} step={1} />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {chefs.map((c) => (
+            {sorted.map((c: any) => (
               <ChefCard key={c.id} slug={c.slug} name={c.name} rating={c.rating} deliveryEta={c.deliveryEta} tags={c.tags} image={c.image} />
             ))}
+            {coords && sorted.length === 0 && (
+              <p className="text-sm text-muted-foreground">No chefs within {radius} km of your location.</p>
+            )}
+            {geoDenied && !coords && (
+              <p className="text-sm text-muted-foreground">Location access denied. You can still browse all chefs.</p>
+            )}
           </div>
         </section>
 

@@ -2,3 +2,15 @@ project_id = "uyoemkwlccljqyigmcch"
 
 [functions.create-payment]
 verify_jwt = false
+
+[functions.create-payment-intent]
+verify_jwt = false
+
+[functions.connect-create-account]
+verify_jwt = true
+
+[functions.connect-check-status]
+verify_jwt = true
+
+[functions.stripe-pk]
+verify_jwt = false

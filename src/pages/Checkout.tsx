@@ -6,9 +6,70 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useMemo, useState } from "react";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
+
+const PaymentForm = ({ onSuccess }: { onSuccess: () => void }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${window.location.origin}/payment-success` },
+    });
+    if (error) {
+      alert(error.message || "Payment failed");
+      setSubmitting(false);
+    } else {
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <PaymentElement options={{ layout: "tabs" }} />
+      <Button className="mt-2" disabled={!stripe || submitting} onClick={handlePay}>
+        {submitting ? "Processing..." : "Place order"}
+      </Button>
+    </div>
+  );
+};
 
 const Checkout = () => {
   const { items, total, clear } = useCart();
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  const amountCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
+
+  useEffect(() => {
+    const setup = async () => {
+      if (items.length === 0) return;
+      // 1) Get publishable key
+      const { data: pkRes, error: pkErr } = await supabase.functions.invoke("stripe-pk");
+      if (pkErr || !pkRes?.publishableKey) {
+        console.error(pkErr || "Missing publishable key");
+        return;
+      }
+      setStripePromise(loadStripe(pkRes.publishableKey));
+
+      // 2) Create PaymentIntent for the cart total
+      const { data, error } = await supabase.functions.invoke("create-payment-intent", {
+        body: { amount: amountCents, currency: "usd" },
+      });
+      if (error || !data?.client_secret) {
+        console.error(error || "No client secret returned");
+        return;
+      }
+      setClientSecret(data.client_secret);
+    };
+    setup();
+  }, [amountCents, items.length]);
 
   return (
     <div>
@@ -48,32 +109,13 @@ const Checkout = () => {
           <Separator />
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Payment</h2>
-            <p className="text-sm text-muted-foreground">Demo only. No payment processing yet.</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="card">Card number</Label>
-                <Input id="card" placeholder="0000 0000 0000 0000" />
-              </div>
-              <div>
-                <Label htmlFor="cvv">CVV</Label>
-                <Input id="cvv" placeholder="123" />
-              </div>
-            </div>
-            <Button className="mt-2" disabled={items.length === 0} onClick={async () => {
-              try {
-                const { data, error } = await supabase.functions.invoke('create-payment', {
-                  body: { items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })) }
-                });
-                if (error) throw error;
-                if (data?.url) {
-                  window.open(data.url, '_blank');
-                } else {
-                  alert('Could not start checkout.');
-                }
-              } catch (e: any) {
-                alert(`Payment error: ${e.message || e}`);
-              }
-            }}>Place order</Button>
+            {!stripePromise || !clientSecret ? (
+              <p className="text-sm text-muted-foreground">Preparing secure payment...</p>
+            ) : (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <PaymentForm onSuccess={() => clear()} />
+              </Elements>
+            )}
           </div>
         </section>
         <aside className="space-y-4">
@@ -94,7 +136,7 @@ const Checkout = () => {
             <Separator className="my-3" />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
-              <span className="font-semibold">${total.toFixed(2)}</span>
+              <span className="font-semibold">${(amountCents / 100).toFixed(2)}</span>
             </div>
           </div>
         </aside>

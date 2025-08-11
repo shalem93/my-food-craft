@@ -27,6 +27,8 @@ export type Chef = {
   image: string;
   banner?: string;
   city?: string;
+  lat?: number;
+  lng?: number;
   menu: MenuItem[];
 };
 
@@ -41,6 +43,8 @@ export const chefs: Chef[] = [
     image: chef1,
     banner: heroImage,
     city: "Brooklyn, NY",
+    lat: 40.6782,
+    lng: -73.9442,
     menu: [
       {
         id: "1-1",
@@ -74,6 +78,8 @@ export const chefs: Chef[] = [
     tags: ["Japanese", "Ramen", "Comfort"],
     image: chef2,
     city: "San Francisco, CA",
+    lat: 37.7749,
+    lng: -122.4194,
     menu: [
       {
         id: "2-1",
@@ -107,6 +113,8 @@ export const chefs: Chef[] = [
     tags: ["Mediterranean", "Healthy", "Salads"],
     image: chef3,
     city: "Austin, TX",
+    lat: 30.2672,
+    lng: -97.7431,
     menu: [
       {
         id: "3-1",
