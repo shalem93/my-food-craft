@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 22 90% 55%; /* warm brand orange */
+    --primary: 207 100% 28%; /* dark brand blue */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 25 45% 96%;
@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 14 90% 60%; /* complementary coral */
+    --accent: 207 90% 38%; /* complementary blue */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -34,22 +34,22 @@ All colors MUST be HSL.
 
     --border: 24 33% 90%;
     --input: 24 33% 90%;
-    --ring: 22 90% 40%;
+    --ring: 207 100% 40%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 22 90% 55%;
+    --sidebar-primary: 207 100% 28%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 25 45% 96%;
     --sidebar-accent-foreground: 22 90% 20%;
     --sidebar-border: 24 33% 90%;
-    --sidebar-ring: 22 90% 55%;
+    --sidebar-ring: 207 100% 28%;
 
     /* Design extras */
-    --brand-1: 22 90% 55%;
-    --brand-2: 14 90% 60%;
+    --brand-1: 207 100% 28%;
+    --brand-2: 207 90% 38%;
     --gradient-primary: linear-gradient(135deg, hsl(var(--brand-1)), hsl(var(--brand-2)));
     --gradient-text: linear-gradient(90deg, hsl(var(--brand-1)), hsl(var(--brand-2)));
     --shadow-elevate: 0 12px 30px -10px hsl(var(--brand-1) / 0.35);
@@ -66,7 +66,7 @@ All colors MUST be HSL.
     --popover: 24 16% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 22 90% 60%;
+    --primary: 207 100% 40%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 24 14% 12%;
@@ -75,7 +75,7 @@ All colors MUST be HSL.
     --muted: 24 14% 12%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 14 90% 62%;
+    --accent: 207 90% 50%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 38.6%;
@@ -83,15 +83,15 @@ All colors MUST be HSL.
 
     --border: 24 14% 16%;
     --input: 24 14% 16%;
-    --ring: 22 90% 60%;
+    --ring: 207 100% 40%;
     --sidebar-background: 24 16% 6%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 22 90% 60%;
+    --sidebar-primary: 207 100% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 24 14% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 24 14% 16%;
-    --sidebar-ring: 22 90% 60%;
+    --sidebar-ring: 207 100% 40%;
   }
 }
 

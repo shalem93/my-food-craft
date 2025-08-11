@@ -15,7 +15,7 @@ const Hero = () => {
       </div>
       <div className="relative container mx-auto px-4 flex items-end h-[48vh] md:h-[64vh] pb-12">
         <div className="max-w-2xl">
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-brandSerif font-bold leading-tight tracking-tight">
             Order homemade food from talented local chefs
           </h1>
           <p className="mt-3 text-base md:text-lg text-muted-foreground">
