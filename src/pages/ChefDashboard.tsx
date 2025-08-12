@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 
 // Local types to avoid depending on generated Supabase types
 interface MenuItemRow {
@@ -67,6 +69,16 @@ const ChefDashboard = () => {
     available: true,
   });
 
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [earnings, setEarnings] = useState<{ date: string; total_cents: number }[]>([]);
+  const [metrics, setMetrics] = useState<{
+    totalEarningsCents: number;
+    orderCount: number;
+    avgOrderValueCents: number;
+    currency: string;
+  } | null>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
   const { toast } = useToast();
 
   const refreshStatus = async () => {
@@ -109,6 +121,19 @@ const ChefDashboard = () => {
         .order("created_at", { ascending: false });
       setReviews((revs || []) as ReviewRow[]);
       setReviewsLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setAnalyticsLoading(true);
+      const { data, error } = await supabase.functions.invoke("chef-analytics");
+      if (!error && data) {
+        setMetrics(data.metrics);
+        setEarnings(data.earnings);
+        setRecentOrders(data.recentOrders || []);
+      }
+      setAnalyticsLoading(false);
     })();
   }, []);
 
@@ -207,18 +232,95 @@ const ChefDashboard = () => {
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="rounded-xl border bg-card p-6 space-y-4">
-                <div>
-                  <p className="font-medium">Payouts via Stripe Connect</p>
-                  <p className="text-sm text-muted-foreground">
-                    Status: {status ? (status.onboarding_complete ? "Onboarding complete" : "Action required") : "Unknown"}
-                  </p>
+              <div className="grid gap-6">
+                <div className="rounded-xl border bg-card p-6 space-y-4 animate-fade-in">
+                  <div>
+                    <p className="font-medium">Payouts via Stripe Connect</p>
+                    <p className="text-sm text-muted-foreground">
+                      Status: {status ? (status.onboarding_complete ? "Onboarding complete" : "Action required") : "Unknown"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button onClick={startOnboarding} disabled={loading}>
+                      {loading ? "Redirecting..." : status?.onboarding_complete ? "Manage account" : "Set up payouts"}
+                    </Button>
+                    <Button variant="secondary" onClick={refreshStatus}>Refresh status</Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button onClick={startOnboarding} disabled={loading}>
-                    {loading ? "Redirecting..." : status?.onboarding_complete ? "Manage account" : "Set up payouts"}
-                  </Button>
-                  <Button variant="secondary" onClick={refreshStatus}>Refresh status</Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+                  <div className="rounded-lg border bg-card p-4">
+                    <p className="text-sm text-muted-foreground">Total earnings (30d)</p>
+                    <p className="mt-2 text-2xl font-semibold">
+                      {metrics ? `$${dollars(metrics.totalEarningsCents)}` : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-card p-4">
+                    <p className="text-sm text-muted-foreground">Orders (30d)</p>
+                    <p className="mt-2 text-2xl font-semibold">
+                      {metrics ? metrics.orderCount : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-card p-4">
+                    <p className="text-sm text-muted-foreground">Avg order value</p>
+                    <p className="mt-2 text-2xl font-semibold">
+                      {metrics ? `$${dollars(metrics.avgOrderValueCents)}` : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-card p-6 animate-fade-in">
+                  <p className="font-medium mb-4">Earnings last 30 days</p>
+                  <ChartContainer
+                    config={{ earnings: { label: "Earnings", color: "hsl(var(--primary))" } }}
+                    className="w-full"
+                  >
+                    <LineChart data={earnings.map((e) => ({ date: e.date.slice(5), earnings: e.total_cents / 100 }))}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis hide />
+                      <ChartTooltip content={<ChartTooltipContent labelKey="date" nameKey="earnings" />} />
+                      <Line type="monotone" dataKey="earnings" stroke="var(--color-earnings)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+
+                <div className="rounded-xl border bg-card p-6 animate-fade-in">
+                  <p className="font-medium mb-4">Recent orders</p>
+                  <div className="rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {analyticsLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={3}>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Loading orders...
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : recentOrders.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-muted-foreground">No recent orders.</TableCell>
+                          </TableRow>
+                        ) : (
+                          recentOrders.map((o) => (
+                            <TableRow key={o.id}>
+                              <TableCell className="whitespace-nowrap text-sm">{new Date(o.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell>${dollars(o.amount)}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{o.status || "—"}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
             </TabsContent>
