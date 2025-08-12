@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
+import { ChefHat } from "lucide-react";
 
 const HeaderNav = () => {
   const { user, signOut } = useAuth();
@@ -18,7 +19,9 @@ const HeaderNav = () => {
     <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="inline-flex items-center gap-2">
-          <span className="h-7 w-7 rounded-lg bg-primary shadow-[var(--shadow-elevate)]" aria-hidden />
+          <div className="h-7 w-7 rounded-lg bg-primary shadow-[var(--shadow-elevate)] flex items-center justify-center" aria-hidden>
+            <ChefHat className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+          </div>
           <span className="font-brandSerif font-bold tracking-tight text-lg text-primary">
             homemade
           </span>
