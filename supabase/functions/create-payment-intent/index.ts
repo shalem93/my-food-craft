@@ -73,17 +73,19 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    await supabaseService.from("orders").insert({
+    const { data: inserted, error: insertError } = await supabaseService.from("orders").insert({
       user_id: user?.id ?? null,
       chef_user_id: chefUserId,
       stripe_payment_intent_id: paymentIntent.id,
       amount,
       currency,
       status: paymentIntent.status,
-    });
+    }).select("id").maybeSingle();
+
+    const order_id = inserted?.id || null;
 
     return new Response(
-      JSON.stringify({ client_secret: paymentIntent.client_secret }),
+      JSON.stringify({ client_secret: paymentIntent.client_secret, payment_intent_id: paymentIntent.id, order_id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {

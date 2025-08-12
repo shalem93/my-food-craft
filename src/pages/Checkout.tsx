@@ -9,8 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
-
-const PaymentForm = ({ onSuccess }: { onSuccess: () => void }) => {
+const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +25,7 @@ const PaymentForm = ({ onSuccess }: { onSuccess: () => void }) => {
       alert(error.message || "Payment failed");
       setSubmitting(false);
     } else {
-      onSuccess();
+      onConfirmed();
     }
   };
 
@@ -44,13 +43,20 @@ const Checkout = () => {
   const { items, total, clear } = useCart();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
+  // Delivery form state
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zip, setZip] = useState("");
+  const [deliveryFeeCents, setDeliveryFeeCents] = useState<number | null>(null);
   const amountCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
 
   useEffect(() => {
     const setup = async () => {
       if (items.length === 0) return;
-      // 1) Get publishable key
       const { data: pkRes, error: pkErr } = await supabase.functions.invoke("stripe-pk");
       if (pkErr || !pkRes?.publishableKey) {
         console.error(pkErr || "Missing publishable key");
@@ -58,7 +64,6 @@ const Checkout = () => {
       }
       setStripePromise(loadStripe(pkRes.publishableKey));
 
-      // 2) Create PaymentIntent for the cart total
       const { data, error } = await supabase.functions.invoke("create-payment-intent", {
         body: { amount: amountCents, currency: "usd" },
       });
@@ -67,15 +72,43 @@ const Checkout = () => {
         return;
       }
       setClientSecret(data.client_secret);
+      if (data.order_id) setOrderId(data.order_id);
     };
     setup();
   }, [amountCents, items.length]);
+
+  const requestQuote = async () => {
+    if (!phone || !address || !city || !zip) return;
+    const dropoff_address = `${address}, ${city} ${zip}`;
+    const { data, error } = await supabase.functions.invoke("doordash-quote", {
+      body: { dropoff_address, dropoff_phone: phone },
+    });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    if (data?.delivery_fee_cents) {
+      setDeliveryFeeCents(data.delivery_fee_cents);
+      if (orderId) {
+        // Loosen types to avoid mismatch with generated types
+        (supabase as any)
+          .from("orders")
+          .update({
+            dropoff_address,
+            dropoff_phone: phone,
+            dropoff_business_name: fullName,
+            delivery_fee_cents: data.delivery_fee_cents,
+          })
+          .eq("id", orderId);
+      }
+    }
+  };
 
   return (
     <div>
       <Helmet>
         <title>Checkout | Homemade</title>
-        <meta name="description" content="Secure checkout on Homemade. Review your order and enter delivery details." />
+        <meta name="description" content="Secure checkout on Homemade. Review your order and enter delivery details with delivery estimates." />
         <link rel="canonical" href={typeof window !== "undefined" ? window.location.href : "https://homemade.app/checkout"} />
       </Helmet>
       <HeaderNav />
@@ -86,34 +119,36 @@ const Checkout = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" placeholder="Jane Doe" />
+                <Input id="name" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="(555) 123-4567" />
+                <Input id="phone" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div className="md:col-span-2">
                 <Label htmlFor="address">Address</Label>
-                <Input id="address" placeholder="123 Main St" />
+                <Input id="address" placeholder="123 Main St" value={address} onChange={(e) => setAddress(e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="city">City</Label>
-                <Input id="city" placeholder="City" />
+                <Input id="city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="zip">ZIP</Label>
-                <Input id="zip" placeholder="00000" />
+                <Input id="zip" placeholder="00000" value={zip} onChange={(e) => setZip(e.target.value)} />
               </div>
             </div>
           </div>
-          <Separator />
+          <div>
+            <Button variant="secondary" onClick={requestQuote} disabled={!phone || !address || !city || !zip}>Get delivery estimate</Button>
+          </div>
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Payment</h2>
             {!stripePromise || !clientSecret ? (
               <p className="text-sm text-muted-foreground">Preparing secure payment...</p>
             ) : (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm onSuccess={() => clear()} />
+                <PaymentForm onConfirmed={() => clear()} />
               </Elements>
             )}
           </div>
@@ -137,6 +172,17 @@ const Checkout = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
               <span className="font-semibold">${(amountCents / 100).toFixed(2)}</span>
+            </div>
+            {deliveryFeeCents !== null && (
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-muted-foreground">Delivery</span>
+                <span className="font-semibold">${(deliveryFeeCents / 100).toFixed(2)}</span>
+              </div>
+            )}
+            <Separator className="my-3" />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="font-semibold">${(((amountCents + (deliveryFeeCents ?? 0)) / 100)).toFixed(2)}</span>
             </div>
           </div>
         </aside>
