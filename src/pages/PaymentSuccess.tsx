@@ -18,7 +18,7 @@ const PaymentSuccess = () => {
           const pi = await stripe?.retrievePaymentIntent(clientSecret);
           const piId = pi?.paymentIntent?.id as string | undefined;
           if (piId) {
-            await supabase.functions.invoke("doordash-create", { body: { payment_intent_id: piId } });
+            await supabase.functions.invoke("doordash-create", { body: { payment_intent_id: piId, payment_intent_client_secret: clientSecret } });
           }
         }
       } catch (e) {

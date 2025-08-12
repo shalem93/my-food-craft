@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.stripe-pk]
 verify_jwt = false
+
+[functions.doordash-quote]
+verify_jwt = false
+
+[functions.doordash-create]
+verify_jwt = false
