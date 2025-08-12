@@ -53,6 +53,42 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          available: boolean
+          chef_user_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          available?: boolean
+          chef_user_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          available?: boolean
+          chef_user_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
@@ -89,6 +125,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          chef_user_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          looks: number
+          order_id: string | null
+          price: number
+          taste: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chef_user_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          looks: number
+          order_id?: string | null
+          price: number
+          taste: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chef_user_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          looks?: number
+          order_id?: string | null
+          price?: number
+          taste?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -112,7 +187,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      chef_ratings: {
+        Row: {
+          avg_looks: number | null
+          avg_overall: number | null
+          avg_price: number | null
+          avg_taste: number | null
+          chef_user_id: string | null
+          review_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
