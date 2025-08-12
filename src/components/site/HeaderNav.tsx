@@ -48,7 +48,10 @@ const HeaderNav = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/chef-dashboard">Earnings & payouts</Link>
+                  <Link to="/chef-dashboard">My Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/chef-dashboard">Edit Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>

@@ -7,6 +7,9 @@ import { chefs } from "@/data/chefs";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 function haversine(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const toRad = (x: number) => (x * Math.PI) / 180;
@@ -25,6 +28,28 @@ const Index = () => {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(15); // km
   const [geoDenied, setGeoDenied] = useState(false);
+
+  const { user, loading } = useAuth();
+  const [isChef, setIsChef] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkRole = async () => {
+      if (!user) {
+        setIsChef(false);
+        return;
+      }
+      const { data } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (!cancelled) {
+        setIsChef((data || []).some((r: any) => r.role === "chef"));
+      }
+    };
+    checkRole();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const sorted = useMemo(() => {
     if (!coords) return chefs;
@@ -51,6 +76,10 @@ const Index = () => {
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
+
+  if (!loading && user && isChef) {
+    return <Navigate to="/chef-dashboard" replace />;
+  }
 
   return (
     <div>
