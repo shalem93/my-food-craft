@@ -17,7 +17,7 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
   const handlePay = async () => {
     if (!stripe || !elements) return;
     setSubmitting(true);
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url: `${window.location.origin}/payment-success` },
       redirect: "if_required"
@@ -25,9 +25,9 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
     if (error) {
       alert(error.message || "Payment failed");
       setSubmitting(false);
-    } else {
-      // Payment succeeded, redirect to success page
-      window.location.href = `${window.location.origin}/payment-success`;
+    } else if (paymentIntent) {
+      // Payment succeeded, redirect to success page with payment intent ID
+      window.location.href = `${window.location.origin}/payment-success?payment_intent=${paymentIntent.id}`;
     }
   };
 
