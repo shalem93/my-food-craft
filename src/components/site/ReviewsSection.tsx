@@ -21,6 +21,7 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [hasCompletedOrders, setHasCompletedOrders] = useState(false);
 
   const [taste, setTaste] = useState("5");
   const [looks, setLooks] = useState("5");
@@ -29,8 +30,10 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
 
   useEffect(() => {
     let active = true;
-    const fetchReviews = async () => {
+    const fetchData = async () => {
       setLoading(true);
+      
+      // Fetch reviews
       const query = supabase
         .from("reviews")
         .select("id, comment, taste, looks, price, created_at, user_id")
@@ -48,11 +51,24 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
       } else {
         setReviews(data || []);
       }
+
+      // Check if user has completed orders (for review permission)
+      if (user) {
+        const { data: orders } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("user_id", user.id)
+          .not("delivery_status", "is", null)
+          .limit(1);
+        
+        setHasCompletedOrders(!!orders?.length);
+      }
+      
       setLoading(false);
     };
-    fetchReviews();
+    fetchData();
     return () => { active = false; };
-  }, [chefSlug, itemId]);
+  }, [chefSlug, itemId, user]);
 
   const averages = useMemo(() => {
     if (!reviews.length) return { taste: 0, looks: 0, price: 0, count: 0 };
@@ -115,7 +131,7 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
         </p>
       </div>
 
-      {user && (
+      {user && hasCompletedOrders && (
         <form onSubmit={onSubmit} className="rounded-xl border p-4 grid gap-4 bg-card">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -160,6 +176,18 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
             <Button type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit review"}</Button>
           </div>
         </form>
+      )}
+
+      {user && !hasCompletedOrders && (
+        <div className="rounded-xl border p-4 bg-muted/50 text-center">
+          <p className="text-sm text-muted-foreground">Complete an order to leave a review</p>
+        </div>
+      )}
+
+      {!user && (
+        <div className="rounded-xl border p-4 bg-muted/50 text-center">
+          <p className="text-sm text-muted-foreground">Sign in to see review form</p>
+        </div>
       )}
 
       <div className="mt-6 space-y-4">
