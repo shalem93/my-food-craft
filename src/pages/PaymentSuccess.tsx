@@ -1,41 +1,54 @@
 import { Helmet } from "react-helmet-async";
 import HeaderNav from "@/components/site/HeaderNav";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { loadStripe } from "@stripe/stripe-js";
+import { Loader2 } from "lucide-react";
 
 const PaymentSuccess = () => {
   const { clear } = useCart();
+  const [redirecting, setRedirecting] = useState(false);
   
   useEffect(() => {
     const finalize = async () => {
       try {
-        // Attempt to create delivery using the payment intent id from URL
         const params = new URLSearchParams(window.location.search);
+        let paymentIntentId = params.get("payment_intent");
         const clientSecret = params.get("payment_intent_client_secret");
-        console.log("Client secret from URL:", clientSecret);
         
-        if (clientSecret) {
-          const stripe = await loadStripe((await supabase.functions.invoke("stripe-pk")).data.publishableKey);
-          const pi = await stripe?.retrievePaymentIntent(clientSecret);
-          const piId = pi?.paymentIntent?.id as string | undefined;
-          console.log("Payment intent ID:", piId);
+        console.log("URL params:", { paymentIntentId, clientSecret });
+        console.log("Full URL:", window.location.href);
+        
+        // If we have client secret, extract payment intent ID from it
+        if (clientSecret && !paymentIntentId) {
+          paymentIntentId = clientSecret.split('_secret_')[0];
+          console.log("Extracted payment intent ID from client secret:", paymentIntentId);
+        }
+        
+        if (paymentIntentId) {
+          setRedirecting(true);
           
-          if (piId) {
-            const result = await supabase.functions.invoke("doordash-create", { 
-              body: { payment_intent_id: piId, payment_intent_client_secret: clientSecret } 
-            });
-            console.log("DoorDash create result:", result);
-            
-            // Redirect immediately after creating delivery
-            setTimeout(() => {
-              window.location.href = `/order-tracking?payment_intent_id=${piId}`;
-            }, 2000);
-          }
+          const result = await supabase.functions.invoke("doordash-create", { 
+            body: { payment_intent_id: paymentIntentId, payment_intent_client_secret: clientSecret } 
+          });
+          console.log("DoorDash create result:", result);
+          
+          // Navigate immediately
+          window.location.href = `/order-tracking?payment_intent_id=${paymentIntentId}`;
+        } else {
+          console.error("No payment intent ID found in URL");
+          // Fallback - redirect to home after a delay
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 3000);
         }
       } catch (e) {
         console.error("Payment finalization error:", e);
+        // On error, still redirect to avoid being stuck
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 3000);
       } finally {
         clear();
       }
@@ -81,9 +94,16 @@ const PaymentSuccess = () => {
             </ul>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            Redirecting to order tracking in a few seconds...
-          </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            {redirecting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Redirecting to order tracking...
+              </>
+            ) : (
+              "Setting up your delivery..."
+            )}
+          </div>
         </section>
       </main>
     </div>
