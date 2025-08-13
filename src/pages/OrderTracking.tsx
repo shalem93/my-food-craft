@@ -28,21 +28,30 @@ const OrderTracking = () => {
     const fetchOrder = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const orderId = urlParams.get('order_id');
+      const paymentIntentId = urlParams.get('payment_intent_id');
       
-      if (!orderId) {
+      console.log("Fetching order with:", { orderId, paymentIntentId });
+      
+      if (!orderId && !paymentIntentId) {
+        console.log("No order ID or payment intent ID found in URL");
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
+      let query = supabase.from('orders').select('*');
+      
+      if (orderId) {
+        query = query.eq('id', orderId);
+      } else if (paymentIntentId) {
+        query = query.eq('stripe_payment_intent_id', paymentIntentId);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) {
         console.error('Error fetching order:', error);
       } else {
+        console.log("Order data:", data);
         setOrder(data);
       }
       setLoading(false);

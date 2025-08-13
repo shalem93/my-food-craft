@@ -14,36 +14,34 @@ const PaymentSuccess = () => {
         // Attempt to create delivery using the payment intent id from URL
         const params = new URLSearchParams(window.location.search);
         const clientSecret = params.get("payment_intent_client_secret");
+        console.log("Client secret from URL:", clientSecret);
+        
         if (clientSecret) {
           const stripe = await loadStripe((await supabase.functions.invoke("stripe-pk")).data.publishableKey);
           const pi = await stripe?.retrievePaymentIntent(clientSecret);
           const piId = pi?.paymentIntent?.id as string | undefined;
+          console.log("Payment intent ID:", piId);
+          
           if (piId) {
-            await supabase.functions.invoke("doordash-create", { body: { payment_intent_id: piId, payment_intent_client_secret: clientSecret } });
+            const result = await supabase.functions.invoke("doordash-create", { 
+              body: { payment_intent_id: piId, payment_intent_client_secret: clientSecret } 
+            });
+            console.log("DoorDash create result:", result);
+            
+            // Redirect immediately after creating delivery
+            setTimeout(() => {
+              window.location.href = `/order-tracking?payment_intent_id=${piId}`;
+            }, 2000);
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error("Payment finalization error:", e);
       } finally {
         clear();
       }
     };
     finalize();
   }, [clear]);
-
-  useEffect(() => {
-    // Redirect to order tracking after a short delay
-    const timer = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      const clientSecret = params.get("payment_intent_client_secret");
-      if (clientSecret) {
-        // Extract order ID from the payment intent if available
-        window.location.href = `/order-tracking${window.location.search}`;
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div>
