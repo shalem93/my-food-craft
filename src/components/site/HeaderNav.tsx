@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-import { ChefHat } from "lucide-react";
+
 
 const HeaderNav = () => {
   const { user, signOut } = useAuth();
@@ -20,7 +20,15 @@ const HeaderNav = () => {
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="inline-flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-primary shadow-[var(--shadow-elevate)] flex items-center justify-center" aria-hidden>
-            <ChefHat className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-primary-foreground" aria-hidden="true" focusable="false">
+              <g fill="currentColor">
+                <circle cx="9" cy="7" r="3" />
+                <circle cx="15" cy="7" r="3" />
+                <circle cx="12" cy="4.5" r="3.5" />
+                <rect x="5" y="12" width="14" height="2" rx="1" />
+                <rect x="8" y="14" width="8" height="6" rx="2" />
+              </g>
+            </svg>
           </div>
           <span className="font-brandSerif font-bold tracking-tight text-lg text-primary">
             homemade
