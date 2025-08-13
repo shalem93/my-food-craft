@@ -32,7 +32,13 @@ const CartSheet = () => {
               )}
               <div className="flex-1">
                 <p className="font-medium leading-tight">{i.name}</p>
-                <p className="text-sm text-muted-foreground">${(i.price * i.quantity).toFixed(2)}</p>
+                {i.options && i.options.length > 0 && (
+                  <p className="text-xs text-muted-foreground">Options: {i.options.join(", ")}</p>
+                )}
+                {i.note && (
+                  <p className="text-xs text-muted-foreground">Note: {i.note}</p>
+                )}
+                <p className="mt-1 text-sm font-medium">${(i.price * i.quantity).toFixed(2)}</p>
                 <div className="mt-2 inline-flex items-center gap-2">
                   <Button variant="secondary" size="icon" onClick={() => update(i.id, Math.max(1, i.quantity - 1))} aria-label="Decrease quantity">-</Button>
                   <span className="text-sm tabular-nums min-w-[1.5rem] text-center">{i.quantity}</span>

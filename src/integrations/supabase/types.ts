@@ -95,7 +95,20 @@ export type Database = {
           chef_user_id: string | null
           created_at: string
           currency: string
+          delivery_fee_cents: number | null
+          delivery_service: string | null
+          delivery_status: string | null
+          delivery_tracking_url: string | null
+          dropoff_address: string | null
+          dropoff_business_name: string | null
+          dropoff_instructions: string | null
+          dropoff_phone: string | null
+          external_delivery_id: string | null
           id: string
+          pickup_address: string | null
+          pickup_business_name: string | null
+          pickup_instructions: string | null
+          pickup_phone: string | null
           status: string | null
           stripe_payment_intent_id: string | null
           updated_at: string
@@ -106,7 +119,20 @@ export type Database = {
           chef_user_id?: string | null
           created_at?: string
           currency?: string
+          delivery_fee_cents?: number | null
+          delivery_service?: string | null
+          delivery_status?: string | null
+          delivery_tracking_url?: string | null
+          dropoff_address?: string | null
+          dropoff_business_name?: string | null
+          dropoff_instructions?: string | null
+          dropoff_phone?: string | null
+          external_delivery_id?: string | null
           id?: string
+          pickup_address?: string | null
+          pickup_business_name?: string | null
+          pickup_instructions?: string | null
+          pickup_phone?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
@@ -117,7 +143,20 @@ export type Database = {
           chef_user_id?: string | null
           created_at?: string
           currency?: string
+          delivery_fee_cents?: number | null
+          delivery_service?: string | null
+          delivery_status?: string | null
+          delivery_tracking_url?: string | null
+          dropoff_address?: string | null
+          dropoff_business_name?: string | null
+          dropoff_instructions?: string | null
+          dropoff_phone?: string | null
+          external_delivery_id?: string | null
           id?: string
+          pickup_address?: string | null
+          pickup_business_name?: string | null
+          pickup_instructions?: string | null
+          pickup_phone?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
@@ -127,9 +166,11 @@ export type Database = {
       }
       reviews: {
         Row: {
-          chef_user_id: string
+          chef_user_id: string | null
           comment: string | null
           created_at: string
+          external_chef_slug: string | null
+          external_menu_item_id: string | null
           id: string
           looks: number
           order_id: string | null
@@ -139,9 +180,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          chef_user_id: string
+          chef_user_id?: string | null
           comment?: string | null
           created_at?: string
+          external_chef_slug?: string | null
+          external_menu_item_id?: string | null
           id?: string
           looks: number
           order_id?: string | null
@@ -151,9 +194,11 @@ export type Database = {
           user_id: string
         }
         Update: {
-          chef_user_id?: string
+          chef_user_id?: string | null
           comment?: string | null
           created_at?: string
+          external_chef_slug?: string | null
+          external_menu_item_id?: string | null
           id?: string
           looks?: number
           order_id?: string | null

@@ -5,6 +5,7 @@ import MenuItemCard from "@/components/site/MenuItemCard";
 import CartSheet from "@/components/site/CartSheet";
 import { getChefBySlug } from "@/data/chefs";
 import { Badge } from "@/components/ui/badge";
+import ReviewsSection from "@/components/site/ReviewsSection";
 
 const ChefPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -75,6 +76,8 @@ const ChefPage = () => {
               <MenuItemCard key={item.id} chefSlug={chef.slug} id={item.id} name={item.name} description={item.description} price={item.price} image={item.image} />
             ))}
           </div>
+
+          <ReviewsSection chefSlug={chef.slug} title="Customer reviews" />
         </section>
       </main>
       <CartSheet />
