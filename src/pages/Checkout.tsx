@@ -15,19 +15,39 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const handlePay = async () => {
-    if (!stripe || !elements) return;
+    if (!stripe || !elements) {
+      console.log("Stripe or elements not ready");
+      return;
+    }
+    
+    console.log("Starting payment confirmation...");
     setSubmitting(true);
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: `${window.location.origin}/payment-success` },
-      redirect: "if_required"
-    });
-    if (error) {
-      alert(error.message || "Payment failed");
+    
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: `${window.location.origin}/payment-success` },
+        redirect: "if_required"
+      });
+      
+      console.log("Payment confirmation result:", { error, paymentIntent });
+      
+      if (error) {
+        console.error("Payment error:", error);
+        alert(error.message || "Payment failed");
+        setSubmitting(false);
+      } else if (paymentIntent) {
+        console.log("Payment succeeded, redirecting with payment intent:", paymentIntent.id);
+        // Payment succeeded, redirect to success page with payment intent ID
+        window.location.href = `${window.location.origin}/payment-success?payment_intent=${paymentIntent.id}`;
+      } else {
+        console.log("No error but no payment intent - this shouldn't happen");
+        setSubmitting(false);
+      }
+    } catch (err) {
+      console.error("Unexpected error during payment:", err);
+      alert("An unexpected error occurred");
       setSubmitting(false);
-    } else if (paymentIntent) {
-      // Payment succeeded, redirect to success page with payment intent ID
-      window.location.href = `${window.location.origin}/payment-success?payment_intent=${paymentIntent.id}`;
     }
   };
 
