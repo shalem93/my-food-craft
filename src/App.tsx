@@ -11,6 +11,7 @@ import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
+import OrderTracking from "./pages/OrderTracking";
 import ChefDashboard from "./pages/ChefDashboard";
 
 import { CartProvider } from "./context/CartContext";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-canceled" element={<PaymentCanceled />} />
+                <Route path="/order-tracking" element={<OrderTracking />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

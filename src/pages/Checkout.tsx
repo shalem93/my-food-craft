@@ -20,12 +20,14 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url: `${window.location.origin}/payment-success` },
+      redirect: "if_required"
     });
     if (error) {
       alert(error.message || "Payment failed");
       setSubmitting(false);
     } else {
-      onConfirmed();
+      // Payment succeeded, redirect to success page
+      window.location.href = `${window.location.origin}/payment-success`;
     }
   };
 

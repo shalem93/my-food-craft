@@ -43,16 +43,33 @@ serve(async (req) => {
     const delivery_tracking_url = `https://doordash.com/tracking/${external_delivery_id}`;
     const delivery_fee_cents = order?.delivery_fee_cents ?? 599;
 
-    await supabaseService
+    const { data: updatedOrder } = await supabaseService
       .from("orders")
       .update({
         external_delivery_id,
         delivery_service: "doordash",
-        delivery_status: "created",
+        delivery_status: "confirmed",
         delivery_tracking_url,
         delivery_fee_cents,
       })
-      .eq("stripe_payment_intent_id", payment_intent_id);
+      .eq("stripe_payment_intent_id", payment_intent_id)
+      .select()
+      .single();
+
+    // Send SMS notification if phone number is available
+    if (updatedOrder?.dropoff_phone) {
+      try {
+        await supabaseService.functions.invoke('send-sms', {
+          body: {
+            phone: updatedOrder.dropoff_phone,
+            message: `🍽️ Great news! Your Homemade order has been confirmed and your chef is preparing your meal. Track your order: ${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com')}/order-tracking?order_id=${updatedOrder.id}`,
+            orderId: updatedOrder.id
+          }
+        });
+      } catch (smsError) {
+        console.error('Failed to send SMS:', smsError);
+      }
+    }
 
     return new Response(JSON.stringify({
       external_delivery_id,
