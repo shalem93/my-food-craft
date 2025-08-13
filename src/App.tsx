@@ -13,6 +13,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import OrderTracking from "./pages/OrderTracking";
 import ChefDashboard from "./pages/ChefDashboard";
+import Orders from "./pages/Orders";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -33,6 +34,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chef/:slug" element={<Chef />} />
                 <Route path="/chef-dashboard" element={<ChefDashboard />} />
+                <Route path="/orders" element={<Orders />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-canceled" element={<PaymentCanceled />} />

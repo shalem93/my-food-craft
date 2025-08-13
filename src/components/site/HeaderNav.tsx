@@ -10,10 +10,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const HeaderNav = () => {
   const { user, signOut } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user) {
+        setUserRole(null);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!error && data) {
+          setUserRole(data.role);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
@@ -35,7 +63,9 @@ const HeaderNav = () => {
         </div>
         {user ? (
           <div className="hidden md:flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Welcome</span>
+            <span className="text-sm text-muted-foreground">
+              Welcome {userRole && `(${userRole})`}
+            </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
@@ -50,14 +80,27 @@ const HeaderNav = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   Signed in as {user.email}
+                  {userRole && (
+                    <div className="text-xs text-muted-foreground capitalize">
+                      Role: {userRole}
+                    </div>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/chef-dashboard">My Dashboard</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/chef-dashboard">Edit Profile</Link>
-                </DropdownMenuItem>
+                {userRole === 'chef' ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/chef-dashboard">My Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/chef-dashboard">Edit Profile</Link>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders">My Orders</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
