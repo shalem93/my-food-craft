@@ -22,6 +22,9 @@ export type Chef = {
   slug: string;
   name: string;
   rating: number;
+  tasteRating?: number;
+  looksRating?: number;
+  priceLevel?: number; // 1-4 like Yelp style
   deliveryEta: string;
   tags: string[];
   image: string;
@@ -38,6 +41,9 @@ export const chefs: Chef[] = [
     slug: "nonnas-kitchen",
     name: "Nonna's Kitchen",
     rating: 4.9,
+    tasteRating: 4.8,
+    looksRating: 4.6,
+    priceLevel: 2,
     deliveryEta: "30–45 min",
     tags: ["Italian", "Pasta", "Bread"],
     image: chef1,
@@ -74,6 +80,9 @@ export const chefs: Chef[] = [
     slug: "ramen-lab",
     name: "Ramen Lab by Kenji",
     rating: 4.8,
+    tasteRating: 4.7,
+    looksRating: 4.5,
+    priceLevel: 2,
     deliveryEta: "25–40 min",
     tags: ["Japanese", "Ramen", "Comfort"],
     image: chef2,
@@ -109,6 +118,9 @@ export const chefs: Chef[] = [
     slug: "fresh-bites",
     name: "Fresh Bites by Amara",
     rating: 4.7,
+    tasteRating: 4.6,
+    looksRating: 4.4,
+    priceLevel: 2,
     deliveryEta: "20–35 min",
     tags: ["Mediterranean", "Healthy", "Salads"],
     image: chef3,

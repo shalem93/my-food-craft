@@ -115,7 +115,18 @@ const Index = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sorted.map((c: any) => (
-              <ChefCard key={c.id} slug={c.slug} name={c.name} rating={c.rating} deliveryEta={c.deliveryEta} tags={c.tags} image={c.image} />
+              <ChefCard
+                key={c.id}
+                slug={c.slug}
+                name={c.name}
+                rating={c.rating}
+                tasteRating={c.tasteRating}
+                looksRating={c.looksRating}
+                priceLevel={c.priceLevel}
+                deliveryEta={c.deliveryEta}
+                tags={c.tags}
+                image={c.image}
+              />
             ))}
             {coords && sorted.length === 0 && (
               <p className="text-sm text-muted-foreground">No chefs within {radius} km of your location.</p>
