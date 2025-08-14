@@ -17,39 +17,54 @@ export type Database = {
       chef_profiles: {
         Row: {
           bio: string | null
+          city: string | null
           created_at: string
           display_name: string | null
           id: string
           lat: number | null
           lng: number | null
           onboarding_complete: boolean
+          pickup_address: string | null
+          pickup_business_name: string | null
+          pickup_phone: string | null
           stripe_account_id: string | null
           updated_at: string
           user_id: string
+          zip: string | null
         }
         Insert: {
           bio?: string | null
+          city?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           onboarding_complete?: boolean
+          pickup_address?: string | null
+          pickup_business_name?: string | null
+          pickup_phone?: string | null
           stripe_account_id?: string | null
           updated_at?: string
           user_id: string
+          zip?: string | null
         }
         Update: {
           bio?: string | null
+          city?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           onboarding_complete?: boolean
+          pickup_address?: string | null
+          pickup_business_name?: string | null
+          pickup_phone?: string | null
           stripe_account_id?: string | null
           updated_at?: string
           user_id?: string
+          zip?: string | null
         }
         Relationships: []
       }

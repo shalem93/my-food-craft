@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,17 @@ interface RatingsAgg {
 const ChefDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<any>(null);
+  const [chefProfile, setChefProfile] = useState<any>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    pickup_address: "",
+    pickup_phone: "",
+    pickup_business_name: "",
+    city: "",
+    zip: "",
+    display_name: "",
+    bio: ""
+  });
 
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuItems, setMenuItems] = useState<MenuItemRow[]>([]);
@@ -93,6 +105,28 @@ const ChefDashboard = () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return;
+
+      // Load chef profile
+      const { data: profile } = await supabase
+        .from("chef_profiles")
+        .select("*")
+        .eq("user_id", uid)
+        .maybeSingle();
+      
+      setChefProfile(profile);
+      if (profile) {
+        setAddressForm({
+          pickup_address: profile.pickup_address || "",
+          pickup_phone: profile.pickup_phone || "",
+          pickup_business_name: profile.pickup_business_name || "",
+          city: profile.city || "",
+          zip: profile.zip || "",
+          display_name: profile.display_name || "",
+          bio: profile.bio || ""
+        });
+      } else {
+        setShowAddressForm(true);
+      }
 
       // Menu
       setMenuLoading(true);
@@ -146,6 +180,58 @@ const ChefDashboard = () => {
   };
 
   const dollars = (cents: number) => (cents / 100).toFixed(2);
+
+  const handleSaveAddress = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+
+    if (!addressForm.pickup_address || !addressForm.pickup_phone || !addressForm.pickup_business_name) {
+      toast({ description: "Please fill in all required address fields.", variant: "destructive" });
+      return;
+    }
+
+    const profileData = {
+      user_id: uid,
+      pickup_address: addressForm.pickup_address,
+      pickup_phone: addressForm.pickup_phone,
+      pickup_business_name: addressForm.pickup_business_name,
+      city: addressForm.city,
+      zip: addressForm.zip,
+      display_name: addressForm.display_name,
+      bio: addressForm.bio
+    };
+
+    let error;
+    if (chefProfile) {
+      const { error: updateError } = await supabase
+        .from("chef_profiles")
+        .update(profileData)
+        .eq("user_id", uid);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from("chef_profiles")
+        .insert(profileData);
+      error = insertError;
+    }
+
+    if (error) {
+      toast({ description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Refresh profile
+    const { data: profile } = await supabase
+      .from("chef_profiles")
+      .select("*")
+      .eq("user_id", uid)
+      .single();
+    
+    setChefProfile(profile);
+    setShowAddressForm(false);
+    toast({ description: "Chef profile updated successfully!" });
+  };
 
   const handleCreateItem = async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -233,6 +319,89 @@ const ChefDashboard = () => {
 
             <TabsContent value="overview">
               <div className="grid gap-6">
+                {showAddressForm && (
+                  <Card className="animate-fade-in">
+                    <CardHeader>
+                      <CardTitle>Complete Your Chef Profile</CardTitle>
+                      <CardDescription>
+                        We need your pickup address and contact information for delivery integration.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="pickup_business_name">Business/Chef Name *</Label>
+                          <Input 
+                            id="pickup_business_name"
+                            value={addressForm.pickup_business_name}
+                            onChange={(e) => setAddressForm(f => ({...f, pickup_business_name: e.target.value}))}
+                            placeholder="Chef Maria's Kitchen"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="pickup_phone">Contact Phone *</Label>
+                          <Input 
+                            id="pickup_phone"
+                            value={addressForm.pickup_phone}
+                            onChange={(e) => setAddressForm(f => ({...f, pickup_phone: e.target.value}))}
+                            placeholder="(555) 123-4567"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="pickup_address">Pickup Address *</Label>
+                        <Input 
+                          id="pickup_address"
+                          value={addressForm.pickup_address}
+                          onChange={(e) => setAddressForm(f => ({...f, pickup_address: e.target.value}))}
+                          placeholder="123 Main St, Apt 4B"
+                        />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="city">City</Label>
+                          <Input 
+                            id="city"
+                            value={addressForm.city}
+                            onChange={(e) => setAddressForm(f => ({...f, city: e.target.value}))}
+                            placeholder="Brooklyn"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="zip">ZIP Code</Label>
+                          <Input 
+                            id="zip"
+                            value={addressForm.zip}
+                            onChange={(e) => setAddressForm(f => ({...f, zip: e.target.value}))}
+                            placeholder="11201"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="display_name">Display Name</Label>
+                        <Input 
+                          id="display_name"
+                          value={addressForm.display_name}
+                          onChange={(e) => setAddressForm(f => ({...f, display_name: e.target.value}))}
+                          placeholder="Chef Maria"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="bio">Bio</Label>
+                        <Textarea 
+                          id="bio"
+                          value={addressForm.bio}
+                          onChange={(e) => setAddressForm(f => ({...f, bio: e.target.value}))}
+                          placeholder="Passionate about authentic Italian cuisine..."
+                        />
+                      </div>
+                      <Button onClick={handleSaveAddress} className="w-fit">
+                        Save Profile
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="rounded-xl border bg-card p-6 space-y-4 animate-fade-in">
                   <div>
                     <p className="font-medium">Payouts via Stripe Connect</p>
@@ -247,6 +416,31 @@ const ChefDashboard = () => {
                     <Button variant="secondary" onClick={refreshStatus}>Refresh status</Button>
                   </div>
                 </div>
+
+                {chefProfile && (
+                  <div className="rounded-xl border bg-card p-6 space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">Chef Profile</p>
+                      <Button variant="outline" size="sm" onClick={() => setShowAddressForm(true)}>
+                        Edit Profile
+                      </Button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Business Name:</p>
+                        <p>{chefProfile.pickup_business_name || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Phone:</p>
+                        <p>{chefProfile.pickup_phone || "—"}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-muted-foreground">Pickup Address:</p>
+                        <p>{chefProfile.pickup_address || "—"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                   <div className="rounded-lg border bg-card p-4">

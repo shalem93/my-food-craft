@@ -33,10 +33,18 @@ serve(async (req) => {
 
     console.log("Searching for order with payment_intent_id:", payment_intent_id);
     
-    // Fetch the order by payment intent id
+    // Fetch the order by payment intent id with chef profile for pickup address
     const { data: order, error: orderError } = await supabaseService
       .from("orders")
-      .select("id, dropoff_address, dropoff_phone, dropoff_business_name, dropoff_instructions, delivery_fee_cents")
+      .select(`
+        id, 
+        chef_user_id,
+        dropoff_address, 
+        dropoff_phone, 
+        dropoff_business_name, 
+        dropoff_instructions, 
+        delivery_fee_cents
+      `)
       .eq("stripe_payment_intent_id", payment_intent_id)
       .maybeSingle();
 
@@ -49,6 +57,19 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
+
+    // Fetch chef profile for pickup address
+    let chefProfile = null;
+    if (order.chef_user_id) {
+      const { data: profile } = await supabaseService
+        .from("chef_profiles")
+        .select("pickup_address, pickup_phone, pickup_business_name, city, zip")
+        .eq("user_id", order.chef_user_id)
+        .maybeSingle();
+      chefProfile = profile;
+    }
+
+    console.log("Chef profile for pickup:", chefProfile);
 
     // Simulate DoorDash creation
     const external_delivery_id = `sim-${crypto.randomUUID()}`;
@@ -65,6 +86,9 @@ serve(async (req) => {
         delivery_status: "confirmed",
         delivery_tracking_url,
         delivery_fee_cents,
+        pickup_address: chefProfile?.pickup_address || null,
+        pickup_phone: chefProfile?.pickup_phone || null,
+        pickup_business_name: chefProfile?.pickup_business_name || null,
       })
       .eq("stripe_payment_intent_id", payment_intent_id)
       .select()
