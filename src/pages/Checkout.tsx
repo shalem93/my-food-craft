@@ -1,10 +1,12 @@
 import { Helmet } from "react-helmet-async";
 import HeaderNav from "@/components/site/HeaderNav";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
@@ -63,6 +65,7 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
 
 const Checkout = () => {
   const { items, total, clear } = useCart();
+  const { user } = useAuth();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -74,7 +77,45 @@ const Checkout = () => {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [deliveryFeeCents, setDeliveryFeeCents] = useState<number | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const amountCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
+
+  // Load saved addresses for authenticated users
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (!user) return;
+      
+      setIsLoadingAddresses(true);
+      const { data, error } = await supabase
+        .from("saved_addresses")
+        .select("*")
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        console.error("Error loading addresses:", error);
+      } else {
+        setSavedAddresses(data || []);
+        // Auto-select default address
+        const defaultAddress = data?.find(addr => addr.is_default);
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+          setFullName(defaultAddress.full_name);
+          setPhone(defaultAddress.phone);
+          setAddress(defaultAddress.address);
+          setCity(defaultAddress.city);
+          setZip(defaultAddress.zip);
+          // Auto-request quote for default address
+          setTimeout(() => requestQuote(), 100);
+        }
+      }
+      setIsLoadingAddresses(false);
+    };
+
+    loadSavedAddresses();
+  }, [user]);
 
   useEffect(() => {
     const setup = async () => {
@@ -98,6 +139,44 @@ const Checkout = () => {
     };
     setup();
   }, [amountCents, items.length]);
+
+  const handleAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
+    if (selectedAddress) {
+      setFullName(selectedAddress.full_name);
+      setPhone(selectedAddress.phone);
+      setAddress(selectedAddress.address);
+      setCity(selectedAddress.city);
+      setZip(selectedAddress.zip);
+      // Auto-request quote when address changes
+      setTimeout(() => requestQuote(), 100);
+    }
+  };
+
+  const saveCurrentAddress = async () => {
+    if (!user || !fullName || !phone || !address || !city || !zip) return;
+    
+    const { error } = await supabase.from("saved_addresses").insert({
+      user_id: user.id,
+      label: "New Address",
+      full_name: fullName,
+      phone,
+      address,
+      city,
+      zip,
+      is_default: savedAddresses.length === 0 // First address becomes default
+    });
+    
+    if (!error) {
+      // Reload addresses
+      const { data } = await supabase
+        .from("saved_addresses")
+        .select("*")
+        .order("is_default", { ascending: false });
+      setSavedAddresses(data || []);
+    }
+  };
 
   const requestQuote = async () => {
     if (!phone || !address || !city || !zip) return;
@@ -139,31 +218,77 @@ const Checkout = () => {
         <section className="lg:col-span-2 space-y-6">
           <div className="space-y-4">
             <h1 className="text-2xl font-bold">Delivery details</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Saved Addresses Dropdown for Logged In Users */}
+            {user && !isLoadingAddresses && (
+              <div className="space-y-2">
+                <Label>Delivery Address</Label>
+                {savedAddresses.length > 0 ? (
+                  <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a saved address" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {savedAddresses.map((addr) => (
+                        <SelectItem key={addr.id} value={addr.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{addr.label}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {addr.address}, {addr.city} {addr.zip}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new">+ Add new address</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No saved addresses. Fill out the form below to create one.</p>
+                )}
+              </div>
+            )}
+
+            {/* Address Form */}
+            {(!user || selectedAddressId === "new" || savedAddresses.length === 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full name</Label>
+                  <Input id="name" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" placeholder="123 Main St" value={address} onChange={(e) => setAddress(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="zip">ZIP</Label>
+                  <Input id="zip" placeholder="00000" value={zip} onChange={(e) => setZip(e.target.value)} />
+                </div>
+                {user && (
+                  <div className="md:col-span-2">
+                    <Button variant="outline" onClick={saveCurrentAddress} disabled={!fullName || !phone || !address || !city || !zip}>
+                      Save this address
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Manual delivery estimate button (only if no auto-trigger) */}
+            {deliveryFeeCents === null && (
               <div>
-                <Label htmlFor="name">Full name</Label>
-                <Input id="name" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <Button variant="secondary" onClick={requestQuote} disabled={!phone || !address || !city || !zip}>
+                  Get delivery estimate
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" placeholder="123 Main St" value={address} onChange={(e) => setAddress(e.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="city">City</Label>
-                <Input id="city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="zip">ZIP</Label>
-                <Input id="zip" placeholder="00000" value={zip} onChange={(e) => setZip(e.target.value)} />
-              </div>
-            </div>
-          </div>
-          <div>
-            <Button variant="secondary" onClick={requestQuote} disabled={!phone || !address || !city || !zip}>Get delivery estimate</Button>
+            )}
           </div>
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Payment</h2>
