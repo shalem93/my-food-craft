@@ -195,12 +195,17 @@ const OrderTracking = () => {
               </div>
 
               {order.delivery_tracking_url && (
-                <Button 
-                  className="w-full" 
-                  onClick={() => window.open(order.delivery_tracking_url, '_blank')}
-                >
-                  Track with {order.delivery_service || 'Delivery Service'}
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => window.open(order.delivery_tracking_url, '_blank')}
+                  >
+                    Track with DoorDash
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    DoorDash ID: {order.external_delivery_id}
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

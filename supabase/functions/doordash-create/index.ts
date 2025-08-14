@@ -31,19 +31,33 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    console.log("Searching for order with payment_intent_id:", payment_intent_id);
+    
     // Fetch the order by payment intent id
-    const { data: order } = await supabaseService
+    const { data: order, error: orderError } = await supabaseService
       .from("orders")
       .select("id, dropoff_address, dropoff_phone, dropoff_business_name, dropoff_instructions, delivery_fee_cents")
       .eq("stripe_payment_intent_id", payment_intent_id)
       .maybeSingle();
+
+    console.log("Order lookup result:", { order, orderError });
+
+    if (orderError || !order) {
+      console.error("Order not found or error:", orderError);
+      return new Response(JSON.stringify({ error: "Order not found" }), { 
+        status: 404, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
 
     // Simulate DoorDash creation
     const external_delivery_id = `sim-${crypto.randomUUID()}`;
     const delivery_tracking_url = `https://doordash.com/tracking/${external_delivery_id}`;
     const delivery_fee_cents = order?.delivery_fee_cents ?? 599;
 
-    const { data: updatedOrder } = await supabaseService
+    console.log("Updating order with DoorDash details...");
+    
+    const { data: updatedOrder, error: updateError } = await supabaseService
       .from("orders")
       .update({
         external_delivery_id,
@@ -55,6 +69,16 @@ serve(async (req) => {
       .eq("stripe_payment_intent_id", payment_intent_id)
       .select()
       .single();
+
+    console.log("Order update result:", { updatedOrder, updateError });
+
+    if (updateError) {
+      console.error("Failed to update order:", updateError);
+      return new Response(JSON.stringify({ error: "Failed to update order" }), { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
 
     // Send SMS notification if phone number is available
     if (updatedOrder?.dropoff_phone) {
