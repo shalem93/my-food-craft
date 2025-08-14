@@ -126,6 +126,22 @@ const OrderTracking = () => {
     );
   }
 
+  // If order exists but has no delivery info, show setup message
+  if (!order.dropoff_address || !order.dropoff_phone) {
+    return (
+      <div>
+        <HeaderNav />
+        <main className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <h1 className="text-2xl font-bold">Setting Up Your Delivery</h1>
+            <p className="text-muted-foreground">We're processing your payment and setting up delivery. This may take a few moments.</p>
+            <p className="text-sm text-muted-foreground">Please refresh this page in a minute to see your delivery details.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Helmet>

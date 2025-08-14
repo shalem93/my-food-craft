@@ -113,7 +113,7 @@ const Checkout = () => {
       setDeliveryFeeCents(data.delivery_fee_cents);
       if (orderId) {
         // Loosen types to avoid mismatch with generated types
-        (supabase as any)
+        const updateResult = await (supabase as any)
           .from("orders")
           .update({
             dropoff_address,
@@ -122,6 +122,7 @@ const Checkout = () => {
             delivery_fee_cents: data.delivery_fee_cents,
           })
           .eq("id", orderId);
+        console.log("Order update result:", updateResult);
       }
     }
   };
