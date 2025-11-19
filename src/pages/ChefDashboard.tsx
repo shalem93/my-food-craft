@@ -95,7 +95,12 @@ const ChefDashboard = () => {
 
   const refreshStatus = async () => {
     const { data, error } = await supabase.functions.invoke("connect-check-status");
-    if (!error) setStatus(data);
+    // It's ok if there's no connected account yet, user just needs to set it up
+    if (!error) {
+      setStatus(data);
+    } else if (error.message?.includes("No connected account")) {
+      setStatus({ onboarding_complete: false });
+    }
   };
 
   useEffect(() => {
