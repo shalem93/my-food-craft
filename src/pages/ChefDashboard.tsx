@@ -315,6 +315,7 @@ const ChefDashboard = () => {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="menu">Menu</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              <TabsTrigger value="how-it-works">How it works</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -682,6 +683,111 @@ const ChefDashboard = () => {
                 <p className="text-xs text-muted-foreground">
                   Reviews use a 1–5 scale for taste, looks, and price. Optionally, we can restrict reviews to completed orders for extra integrity.
                 </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="how-it-works">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Getting Started as a Chef</CardTitle>
+                    <CardDescription>Here's everything you need to know to start selling your homemade food</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="font-semibold mb-2">1. Complete Your Profile</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Fill in your business name, pickup address, phone number, and a brief bio about your cooking style. This information is essential for delivery coordination.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-2">2. Set Up Stripe Payouts</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connect your Stripe account to receive payments directly. Click "Set up payouts" in the Overview tab and complete the onboarding process. This is required to receive earnings.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-2">3. Add Your Menu Items</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create your menu in the Menu tab. Add dish names, descriptions, prices, and images. You can toggle availability on/off for each item as needed.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-2">4. Receive Orders</h3>
+                      <p className="text-sm text-muted-foreground">
+                        When customers order, you'll see the order details in your dashboard. Prepare the food and have it ready for pickup by the delivery service.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-2">5. Delivery Integration</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Orders are automatically coordinated with DoorDash for delivery. The delivery driver will pick up from your provided address and deliver to the customer.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-2">6. Build Your Reputation</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Customers rate your food on taste, looks, and price. Check the Reviews tab to see feedback and track your ratings over time.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tips for Success</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Quality photos:</strong> Upload clear, appetizing images of your dishes to attract more customers</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Accurate descriptions:</strong> Be clear about ingredients, portion sizes, and any allergens</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Competitive pricing:</strong> Research similar dishes in your area to set fair prices</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Consistent availability:</strong> Keep your menu items available or mark them unavailable if you can't fulfill orders</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Fast preparation:</strong> Have orders ready on time for smooth delivery coordination</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-primary">•</span>
+                        <span><strong>Respond to feedback:</strong> Use reviews to improve and maintain high ratings</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment & Earnings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <p>
+                      <strong>How you get paid:</strong> Payments are processed through Stripe and deposited directly to your bank account according to your Stripe payout schedule.
+                    </p>
+                    <p>
+                      <strong>Tracking earnings:</strong> View your daily earnings, order count, and average order value in the Overview tab. The chart shows your earnings trends over the last 30 days.
+                    </p>
+                    <p>
+                      <strong>Delivery fees:</strong> Delivery costs are handled separately and added to the customer's total. You receive the full menu price for your items.
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           </Tabs>
