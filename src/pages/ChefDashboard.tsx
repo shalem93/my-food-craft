@@ -124,8 +124,9 @@ const ChefDashboard = () => {
           display_name: profile.display_name || "",
           bio: profile.bio || ""
         });
+        setShowAddressForm(false); // Hide form if profile exists
       } else {
-        setShowAddressForm(true);
+        setShowAddressForm(true); // Show form if no profile
       }
 
       // Menu
