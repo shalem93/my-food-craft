@@ -38,8 +38,18 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (error || !profile?.stripe_account_id) {
-      return new Response(JSON.stringify({ error: "No connected account" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // If no Stripe account connected yet, return incomplete status
+    if (!profile?.stripe_account_id) {
+      return new Response(JSON.stringify({
+        charges_enabled: false,
+        details_submitted: false,
+        payouts_enabled: false,
+        onboarding_complete: false,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
