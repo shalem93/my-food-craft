@@ -507,31 +507,6 @@ const ChefDashboard = () => {
                   </div>
                 </div>
 
-                {chefProfile && (
-                  <div className="rounded-xl border bg-card p-6 space-y-4 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium">Chef Profile</p>
-                      <Button variant="outline" size="sm" onClick={() => setShowAddressForm(true)}>
-                        Edit Profile
-                      </Button>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Business Name:</p>
-                        <p>{chefProfile.pickup_business_name || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Phone:</p>
-                        <p>{chefProfile.pickup_phone || "—"}</p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <p className="text-muted-foreground">Pickup Address:</p>
-                        <p>{chefProfile.pickup_address || "—"}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                   <div className="rounded-lg border bg-card p-4">
                     <p className="text-sm text-muted-foreground">Total earnings (30d)</p>
