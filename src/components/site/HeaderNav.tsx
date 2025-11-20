@@ -57,9 +57,19 @@ const HeaderNav = () => {
           </span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm">
-          <NavLink to="/" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground transition-colors"}>Browse</NavLink>
-          <a href="#chefs" className="text-muted-foreground hover:text-foreground transition-colors">Chefs</a>
-          <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+          {userRole === 'chef' ? (
+            <>
+              <NavLink to="/chef-dashboard" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground transition-colors"}>Dashboard</NavLink>
+              <a href="#menu" className="text-muted-foreground hover:text-foreground transition-colors">My Menu</a>
+              <a href="#orders" className="text-muted-foreground hover:text-foreground transition-colors">Orders</a>
+            </>
+          ) : (
+            <>
+              <NavLink to="/" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground transition-colors"}>Browse</NavLink>
+              <a href="#chefs" className="text-muted-foreground hover:text-foreground transition-colors">Chefs</a>
+              <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+            </>
+          )}
         </div>
         {user ? (
           <div className="hidden md:flex items-center gap-3">
