@@ -336,6 +336,36 @@ export type Database = {
         }
         Relationships: []
       }
+      public_chef_info: {
+        Row: {
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          onboarding_complete: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          onboarding_complete?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          onboarding_complete?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
