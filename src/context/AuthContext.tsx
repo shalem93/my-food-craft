@@ -9,6 +9,7 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  userRole: AppRole | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
@@ -24,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
 
   useEffect(() => {
     // 1) Listen for auth changes FIRST
@@ -33,7 +35,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Defer any Supabase calls to prevent deadlocks
       if (newSession?.user) {
-        setTimeout(() => ensureUserRole(newSession), 0);
+        setTimeout(() => {
+          ensureUserRole(newSession);
+          fetchUserRole(newSession.user.id);
+        }, 0);
+      } else {
+        setUserRole(null);
       }
     });
 
@@ -43,12 +50,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        setTimeout(() => ensureUserRole(session), 0);
+        setTimeout(() => {
+          ensureUserRole(session);
+          fetchUserRole(session.user.id);
+        }, 0);
       }
     }).finally(() => setLoading(false));
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+
+      if (!error && data) {
+        setUserRole(data.role as AppRole);
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+    }
+  };
 
   const ensureUserRole = async (currentSession: Session) => {
     try {
@@ -119,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({ title: "Signed out", description: "You have been signed out." });
   };
 
-  const value = useMemo<AuthContextType>(() => ({ user, session, loading, signIn, signUp, signOut }), [user, session, loading]);
+  const value = useMemo<AuthContextType>(() => ({ user, session, loading, userRole, signIn, signUp, signOut }), [user, session, loading, userRole]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -10,12 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Auth = () => {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, userRole, signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) navigate("/", { replace: true });
-  }, [user, loading, navigate]);
+    if (!loading && user) {
+      // Redirect based on role
+      const destination = userRole === "chef" ? "/chef-dashboard" : "/";
+      navigate(destination, { replace: true });
+    }
+  }, [user, loading, userRole, navigate]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

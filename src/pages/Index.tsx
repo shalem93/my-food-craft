@@ -29,27 +29,7 @@ const Index = () => {
   const [radius, setRadius] = useState(15); // km
   const [geoDenied, setGeoDenied] = useState(false);
 
-  const { user, loading } = useAuth();
-  const [isChef, setIsChef] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const checkRole = async () => {
-      if (!user) {
-        setIsChef(false);
-        return;
-      }
-      const { data } = await (supabase as any)
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-      if (!cancelled) {
-        setIsChef((data || []).some((r: any) => r.role === "chef"));
-      }
-    };
-    checkRole();
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  const { user, loading, userRole } = useAuth();
 
   const sorted = useMemo(() => {
     if (!coords) return chefs;
@@ -77,7 +57,7 @@ const Index = () => {
     );
   };
 
-  if (!loading && user && isChef) {
+  if (!loading && user && userRole === "chef") {
     return <Navigate to="/chef-dashboard" replace />;
   }
 
