@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 
 const HeaderNav = () => {
-  const { user, signOut, userRole } = useAuth();
+  const { user, signOut, userRole, userRoles, switchRole } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
@@ -86,6 +86,22 @@ const HeaderNav = () => {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
+                {userRoles.length > 1 && (
+                  <>
+                    <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
+                    {userRoles.map((role) => (
+                      <DropdownMenuItem 
+                        key={role}
+                        onClick={() => switchRole(role)}
+                        className={userRole === role ? "bg-accent" : ""}
+                      >
+                        <span className="capitalize">{role}</span>
+                        {userRole === role && " ✓"}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
