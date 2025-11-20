@@ -326,10 +326,62 @@ const ChefDashboard = () => {
 
             <TabsContent value="overview">
               <div className="grid gap-6">
-                {showAddressForm && (
+                {/* Show read-only profile view when profile exists and not editing */}
+                {chefProfile && !showAddressForm && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>Chef Profile</CardTitle>
+                          <CardDescription>Your business and contact information</CardDescription>
+                        </div>
+                        <Button variant="outline" onClick={() => setShowAddressForm(true)}>
+                          Edit Profile
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-muted-foreground text-xs">Business/Chef Name</Label>
+                          <p className="text-sm font-medium">{chefProfile.pickup_business_name || "Not set"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground text-xs">Contact Phone</Label>
+                          <p className="text-sm font-medium">{chefProfile.pickup_phone || "Not set"}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Pickup Address</Label>
+                        <p className="text-sm font-medium">{chefProfile.pickup_address || "Not set"}</p>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-muted-foreground text-xs">City</Label>
+                          <p className="text-sm font-medium">{chefProfile.city || "Not set"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground text-xs">ZIP Code</Label>
+                          <p className="text-sm font-medium">{chefProfile.zip || "Not set"}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Display Name</Label>
+                        <p className="text-sm font-medium">{chefProfile.display_name || "Not set"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-xs">Bio</Label>
+                        <p className="text-sm">{chefProfile.bio || "Not set"}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Show edit form when no profile exists or explicitly editing */}
+                {(!chefProfile || showAddressForm) && (
                   <Card className="animate-fade-in">
                     <CardHeader>
-                      <CardTitle>Complete Your Chef Profile</CardTitle>
+                      <CardTitle>{chefProfile ? "Edit Chef Profile" : "Complete Your Chef Profile"}</CardTitle>
                       <CardDescription>
                         We need your pickup address and contact information for delivery integration.
                       </CardDescription>
@@ -402,9 +454,14 @@ const ChefDashboard = () => {
                           placeholder="Passionate about authentic Italian cuisine..."
                         />
                       </div>
-                      <Button onClick={handleSaveAddress} className="w-fit">
-                        Save Profile
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button onClick={handleSaveAddress}>Save Profile</Button>
+                        {chefProfile && (
+                          <Button variant="outline" onClick={() => setShowAddressForm(false)}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
