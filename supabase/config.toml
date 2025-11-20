@@ -1,10 +1,10 @@
 project_id = "uyoemkwlccljqyigmcch"
 
 [functions.create-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-payment-intent]
-verify_jwt = false
+verify_jwt = true
 
 [functions.connect-create-account]
 verify_jwt = true
@@ -16,10 +16,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.doordash-quote]
-verify_jwt = false
+verify_jwt = true
 
 [functions.doordash-create]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-sms]
-verify_jwt = false
+verify_jwt = true
