@@ -196,8 +196,15 @@ const ChefDashboard = () => {
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("connect-create-account");
     setLoading(false);
-    if (error) return alert(error.message || "Error starting onboarding");
-    if (data?.url) window.open(data.url, "_blank");
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Error starting onboarding",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (data?.url) window.location.href = data.url;
   };
 
   const dollars = (cents: number) => (cents / 100).toFixed(2);
