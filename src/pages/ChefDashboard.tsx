@@ -83,6 +83,17 @@ const ChefDashboard = () => {
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  
+  const [isOnline, setIsOnline] = useState(false);
+  const [schedule, setSchedule] = useState<any>({
+    monday: { open: "09:00", close: "21:00", enabled: true },
+    tuesday: { open: "09:00", close: "21:00", enabled: true },
+    wednesday: { open: "09:00", close: "21:00", enabled: true },
+    thursday: { open: "09:00", close: "21:00", enabled: true },
+    friday: { open: "09:00", close: "21:00", enabled: true },
+    saturday: { open: "09:00", close: "21:00", enabled: true },
+    sunday: { open: "09:00", close: "21:00", enabled: true }
+  });
 
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [earnings, setEarnings] = useState<{ date: string; total_cents: number }[]>([]);
@@ -143,6 +154,8 @@ const ChefDashboard = () => {
           display_name: profile.display_name || "",
           bio: profile.bio || ""
         });
+        setIsOnline(profile.is_online || false);
+        setSchedule(profile.schedule || schedule);
         setShowAddressForm(false); // Hide form if profile exists
       } else {
         setShowAddressForm(true); // Show form if no profile
@@ -259,6 +272,46 @@ const ChefDashboard = () => {
     setChefProfile(profile);
     setShowAddressForm(false);
     toast({ description: "Chef profile updated successfully!" });
+  };
+
+  const toggleOnlineStatus = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+
+    const newStatus = !isOnline;
+    const { error } = await supabase
+      .from("chef_profiles")
+      .update({ is_online: newStatus })
+      .eq("user_id", uid);
+
+    if (error) {
+      toast({ description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setIsOnline(newStatus);
+    toast({ 
+      description: newStatus ? "You're now online and available for orders!" : "You're now offline" 
+    });
+  };
+
+  const updateSchedule = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+
+    const { error } = await supabase
+      .from("chef_profiles")
+      .update({ schedule })
+      .eq("user_id", uid);
+
+    if (error) {
+      toast({ description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ description: "Schedule updated successfully!" });
   };
 
   const handleImageUpload = async (file: File) => {
@@ -386,6 +439,74 @@ const ChefDashboard = () => {
 
             <TabsContent value="overview">
               <div className="grid gap-6">
+                {/* Availability Section */}
+                {!profileLoading && chefProfile && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Availability</CardTitle>
+                      <CardDescription>Manage your online status and weekly schedule</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Online Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                        <div>
+                          <h3 className="font-semibold">Online Status</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {isOnline ? "You're accepting orders now" : "You're currently offline"}
+                          </p>
+                        </div>
+                        <Switch checked={isOnline} onCheckedChange={toggleOnlineStatus} />
+                      </div>
+
+                      {/* Weekly Schedule */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold">Weekly Schedule</h3>
+                          <Button onClick={updateSchedule} size="sm">Save Schedule</Button>
+                        </div>
+                        <div className="space-y-3">
+                          {Object.keys(schedule).map((day) => (
+                            <div key={day} className="flex items-center gap-4 p-3 border rounded-lg">
+                              <div className="flex items-center gap-3 min-w-[140px]">
+                                <Switch
+                                  checked={schedule[day].enabled}
+                                  onCheckedChange={(checked) =>
+                                    setSchedule({ ...schedule, [day]: { ...schedule[day], enabled: checked } })
+                                  }
+                                />
+                                <span className="font-medium capitalize">{day}</span>
+                              </div>
+                              {schedule[day].enabled && (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Input
+                                    type="time"
+                                    value={schedule[day].open}
+                                    onChange={(e) =>
+                                      setSchedule({ ...schedule, [day]: { ...schedule[day], open: e.target.value } })
+                                    }
+                                    className="w-32"
+                                  />
+                                  <span className="text-muted-foreground">to</span>
+                                  <Input
+                                    type="time"
+                                    value={schedule[day].close}
+                                    onChange={(e) =>
+                                      setSchedule({ ...schedule, [day]: { ...schedule[day], close: e.target.value } })
+                                    }
+                                    className="w-32"
+                                  />
+                                </div>
+                              )}
+                              {!schedule[day].enabled && (
+                                <span className="text-sm text-muted-foreground">Closed</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
                 {/* Show loading state */}
                 {profileLoading && (
                   <Card>
