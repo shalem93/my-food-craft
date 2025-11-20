@@ -81,6 +81,8 @@ const ChefDashboard = () => {
     image_url: "",
     available: true,
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [earnings, setEarnings] = useState<{ date: string; total_cents: number }[]>([]);
@@ -252,6 +254,35 @@ const ChefDashboard = () => {
     toast({ description: "Chef profile updated successfully!" });
   };
 
+  const handleImageUpload = async (file: File) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return null;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uid}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('menu-items')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('menu-items')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error: any) {
+      toast({ description: error.message, variant: "destructive" });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleCreateItem = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
@@ -263,6 +294,14 @@ const ChefDashboard = () => {
       return;
     }
 
+    let imageUrl = form.image_url;
+    if (selectedImageFile) {
+      const uploadedUrl = await handleImageUpload(selectedImageFile);
+      if (uploadedUrl) {
+        imageUrl = uploadedUrl;
+      }
+    }
+
     const { data, error } = await (supabase as any)
       .from("menu_items")
       .insert({
@@ -270,7 +309,7 @@ const ChefDashboard = () => {
         name: form.name,
         description: form.description || null,
         price_cents,
-        image_url: form.image_url || null,
+        image_url: imageUrl || null,
         available: form.available,
       })
       .select("*")
@@ -284,6 +323,7 @@ const ChefDashboard = () => {
     setMenuItems((prev) => [data as MenuItemRow, ...prev]);
     setOpenDialog(false);
     setForm({ name: "", description: "", price: "", image_url: "", available: true });
+    setSelectedImageFile(null);
     toast({ description: "Menu item created." });
   };
 
@@ -609,8 +649,27 @@ const ChefDashboard = () => {
                           <Input id="price" type="number" inputMode="decimal" placeholder="12.50" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="image">Image URL</Label>
-                          <Input id="image" placeholder="https://..." value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} />
+                          <Label htmlFor="image">Dish Photo</Label>
+                          <div className="space-y-2">
+                            <Input 
+                              id="image" 
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setSelectedImageFile(file);
+                                  setForm((f) => ({ ...f, image_url: "" }));
+                                }
+                              }}
+                              disabled={uploadingImage}
+                            />
+                            {selectedImageFile && (
+                              <p className="text-sm text-muted-foreground">
+                                Selected: {selectedImageFile.name}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <Switch id="available" checked={form.available} onCheckedChange={(val) => setForm((f) => ({ ...f, available: val }))} />
@@ -618,7 +677,16 @@ const ChefDashboard = () => {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleCreateItem}>Create</Button>
+                        <Button onClick={handleCreateItem} disabled={uploadingImage}>
+                          {uploadingImage ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            "Create"
+                          )}
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
