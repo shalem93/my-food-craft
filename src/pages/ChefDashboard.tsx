@@ -54,6 +54,7 @@ const ChefDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<any>(null);
   const [chefProfile, setChefProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressForm, setAddressForm] = useState({
     pickup_address: "",
@@ -107,17 +108,31 @@ const ChefDashboard = () => {
     refreshStatus();
     // Load menu and reviews for the current user
     (async () => {
+      setProfileLoading(true);
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
-      if (!uid) return;
+      if (!uid) {
+        setProfileLoading(false);
+        return;
+      }
 
       // Load chef profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("chef_profiles")
         .select("*")
         .eq("user_id", uid)
         .maybeSingle();
       
+      if (profileError) {
+        console.error("Error loading chef profile:", profileError);
+        toast({
+          title: "Error loading profile",
+          description: profileError.message,
+          variant: "destructive",
+        });
+      }
+      
+      console.log("Loaded chef profile:", profile);
       setChefProfile(profile);
       if (profile) {
         setAddressForm({
@@ -133,6 +148,7 @@ const ChefDashboard = () => {
       } else {
         setShowAddressForm(true); // Show form if no profile
       }
+      setProfileLoading(false);
 
       // Menu
       setMenuLoading(true);
@@ -326,8 +342,18 @@ const ChefDashboard = () => {
 
             <TabsContent value="overview">
               <div className="grid gap-6">
+                {/* Show loading state */}
+                {profileLoading && (
+                  <Card>
+                    <CardContent className="py-8 flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="ml-2">Loading profile...</span>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Show read-only profile view when profile exists and not editing */}
-                {chefProfile && !showAddressForm && (
+                {!profileLoading && chefProfile && !showAddressForm && (
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -378,7 +404,7 @@ const ChefDashboard = () => {
                 )}
 
                 {/* Show edit form when no profile exists or explicitly editing */}
-                {(!chefProfile || showAddressForm) && (
+                {!profileLoading && (!chefProfile || showAddressForm) && (
                   <Card className="animate-fade-in">
                     <CardHeader>
                       <CardTitle>{chefProfile ? "Edit Chef Profile" : "Complete Your Chef Profile"}</CardTitle>
