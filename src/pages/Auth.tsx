@@ -14,8 +14,8 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
-      // Redirect based on role
+    // Only redirect once we have both user and role
+    if (!loading && user && userRole) {
       const destination = userRole === "chef" ? "/chef-dashboard" : "/";
       navigate(destination, { replace: true });
     }

@@ -37,12 +37,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(newSession?.user ?? null);
 
       // Defer any Supabase calls to prevent deadlocks
-      if (newSession?.user) {
+      // Only fetch role if not already being set by signIn
+      if (newSession?.user && event !== 'SIGNED_IN') {
         setTimeout(() => {
           ensureUserRole(newSession);
           fetchUserRole(newSession.user.id);
         }, 0);
-      } else {
+      } else if (!newSession?.user) {
         setUserRole(null);
         setUserRoles([]);
         localStorage.removeItem("activeRole");
@@ -76,11 +77,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const roles = data.map(r => r.role as AppRole);
         setUserRoles(roles);
         
-        // Set active role: preferred > stored > chef > first available
+        // Set active role: preferred (if exists) > stored (if exists) > first available
+        let activeRole: AppRole;
         const storedRole = localStorage.getItem("activeRole") as AppRole | null;
-        const activeRole = preferredRole || 
-                          (storedRole && roles.includes(storedRole) ? storedRole : null) ||
-                          (roles.includes("chef") ? "chef" : roles[0]);
+        
+        if (preferredRole && roles.includes(preferredRole)) {
+          activeRole = preferredRole;
+        } else if (storedRole && roles.includes(storedRole)) {
+          activeRole = storedRole;
+        } else {
+          activeRole = roles[0];
+        }
         
         setUserRole(activeRole);
         localStorage.setItem("activeRole", activeRole);
@@ -126,8 +133,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: error.message };
     }
     
-    if (data.user && preferredRole) {
-      localStorage.setItem("activeRole", preferredRole);
+    // Immediately fetch and set the role before the auth state change processes
+    if (data.user) {
+      await ensureUserRole(data.session);
       await fetchUserRole(data.user.id, preferredRole);
     }
     
