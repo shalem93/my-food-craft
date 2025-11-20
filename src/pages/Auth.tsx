@@ -23,6 +23,7 @@ const Auth = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signInRole, setSignInRole] = useState<AppRole>("customer");
 
   const [suEmail, setSuEmail] = useState("");
   const [suPassword, setSuPassword] = useState("");
@@ -33,7 +34,7 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    await signIn(email, password);
+    await signIn(email, password, signInRole);
     setBusy(false);
   };
 
@@ -76,6 +77,19 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
                       <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sign in as</Label>
+                      <RadioGroup value={signInRole} onValueChange={(v) => setSignInRole(v as AppRole)} className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2 rounded-md border border-border p-3">
+                          <RadioGroupItem value="customer" id="si-customer" />
+                          <Label htmlFor="si-customer" className="cursor-pointer">Customer</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 rounded-md border border-border p-3">
+                          <RadioGroupItem value="chef" id="si-chef" />
+                          <Label htmlFor="si-chef" className="cursor-pointer">Chef</Label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     <Button type="submit" disabled={busy} className="w-full">Sign in</Button>
                   </form>

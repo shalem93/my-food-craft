@@ -10,13 +10,15 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   userRole: AppRole | null;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  userRoles: AppRole[];
+  signIn: (email: string, password: string, preferredRole?: AppRole) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
     password: string,
     role: AppRole
   ) => Promise<{ error: string | null; emailSent?: boolean }>;
   signOut: () => Promise<void>;
+  switchRole: (role: AppRole) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -26,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [userRoles, setUserRoles] = useState<AppRole[]>([]);
 
   useEffect(() => {
     // 1) Listen for auth changes FIRST
@@ -41,6 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 0);
       } else {
         setUserRole(null);
+        setUserRoles([]);
+        localStorage.removeItem("activeRole");
       }
     });
 
@@ -60,16 +65,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string, preferredRole?: AppRole) => {
     try {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .single();
+        .eq("user_id", userId);
 
-      if (!error && data) {
-        setUserRole(data.role as AppRole);
+      if (!error && data && data.length > 0) {
+        const roles = data.map(r => r.role as AppRole);
+        setUserRoles(roles);
+        
+        // Set active role: preferred > stored > chef > first available
+        const storedRole = localStorage.getItem("activeRole") as AppRole | null;
+        const activeRole = preferredRole || 
+                          (storedRole && roles.includes(storedRole) ? storedRole : null) ||
+                          (roles.includes("chef") ? "chef" : roles[0]);
+        
+        setUserRole(activeRole);
+        localStorage.setItem("activeRole", activeRole);
       }
     } catch (error) {
       console.error("Error fetching user role:", error);
@@ -105,12 +119,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn: AuthContextType["signIn"] = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn: AuthContextType["signIn"] = async (email, password, preferredRole) => {
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
       return { error: error.message };
     }
+    
+    if (data.user && preferredRole) {
+      localStorage.setItem("activeRole", preferredRole);
+      await fetchUserRole(data.user.id, preferredRole);
+    }
+    
     toast({ title: "Welcome back", description: "You are now signed in." });
     return { error: null };
   };
@@ -142,10 +162,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem("activeRole");
     toast({ title: "Signed out", description: "You have been signed out." });
   };
 
-  const value = useMemo<AuthContextType>(() => ({ user, session, loading, userRole, signIn, signUp, signOut }), [user, session, loading, userRole]);
+  const switchRole = (role: AppRole) => {
+    if (userRoles.includes(role)) {
+      setUserRole(role);
+      localStorage.setItem("activeRole", role);
+      toast({ title: "Role switched", description: `Now using ${role} account` });
+    }
+  };
+
+  const value = useMemo<AuthContextType>(
+    () => ({ user, session, loading, userRole, userRoles, signIn, signUp, signOut, switchRole }), 
+    [user, session, loading, userRole, userRoles]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
