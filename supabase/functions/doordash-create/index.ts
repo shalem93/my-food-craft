@@ -148,13 +148,16 @@ serve(async (req) => {
 
     console.log("Chef profile for pickup:", chefProfile);
 
-    if (!chefProfile?.pickup_address) {
+    if (!chefProfile?.pickup_address || !chefProfile?.city || !chefProfile?.zip) {
       console.error("Missing chef pickup address");
       return new Response(JSON.stringify({ error: "Chef pickup address not configured" }), { 
         status: 400, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
+
+    // Construct full pickup address
+    const pickup_address = `${chefProfile.pickup_address}, ${chefProfile.city} ${chefProfile.zip}`;
 
     // Generate JWT for DoorDash API
     const jwt = await generateDoorDashJWT();
@@ -171,7 +174,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         external_delivery_id,
-        pickup_address: chefProfile.pickup_address,
+        pickup_address,
         pickup_phone_number: chefProfile.pickup_phone || order.dropoff_phone,
         pickup_business_name: chefProfile.pickup_business_name || "Homemade Kitchen",
         dropoff_address: order.dropoff_address,
@@ -205,7 +208,7 @@ serve(async (req) => {
         delivery_status: deliveryData.delivery_status || "confirmed",
         delivery_tracking_url,
         delivery_fee_cents,
-        pickup_address: chefProfile.pickup_address,
+        pickup_address,
         pickup_phone: chefProfile.pickup_phone,
         pickup_business_name: chefProfile.pickup_business_name,
       })
