@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ReviewDialog from "@/components/site/ReviewDialog";
+import { Star } from "lucide-react";
 
 interface Order {
   id: string;
@@ -27,6 +29,8 @@ const Orders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -56,6 +60,33 @@ const Orders = () => {
     };
 
     fetchOrders();
+
+    // Set up real-time subscription for order updates
+    if (!user) return;
+
+    const channel = supabase
+      .channel('user-orders-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          // Update the specific order in the list
+          setOrders(prev => prev.map(order => 
+            order.id === payload.new.id ? { ...order, ...(payload.new as any) } : order
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const getStatusBadgeVariant = (status: string) => {
@@ -186,6 +217,20 @@ const Orders = () => {
                           </div>
                         </div>
                       </CardHeader>
+                      <CardContent>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setReviewDialogOpen(true);
+                          }}
+                          className="w-full"
+                        >
+                          <Star className="h-4 w-4 mr-2" />
+                          Write a Review
+                        </Button>
+                      </CardContent>
                     </Card>
                   ))
                 )}
@@ -194,6 +239,16 @@ const Orders = () => {
           )}
         </div>
       </main>
+
+      {selectedOrder && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          orderId={selectedOrder.id}
+          chefUserId={selectedOrder.chef_user_id}
+          chefName={selectedOrder.chef_profiles?.display_name}
+        />
+      )}
     </div>
   );
 };
