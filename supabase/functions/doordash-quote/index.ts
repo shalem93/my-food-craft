@@ -45,7 +45,7 @@ async function generateDoorDashJWT() {
     throw new Error("Missing DoorDash credentials");
   }
 
-  const header = { alg: "HS256", typ: "JWT", "dd-ver": "DD-JWT-V1" };
+  const header = { alg: "HS256", typ: "JWT", dd_ver: "DD-JWT-V1" };
   const payload = {
     aud: "doordash",
     iss: developerId,
