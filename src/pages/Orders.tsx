@@ -102,12 +102,14 @@ const Orders = () => {
     }
   };
 
+  // Current orders: orders that are not delivered (including newly created with null status)
   const currentOrders = orders.filter(order => 
-    order.delivery_status && order.delivery_status !== 'delivered'
+    !order.delivery_status || (order.delivery_status && order.delivery_status !== 'delivered')
   );
   
+  // Past orders: only delivered orders
   const pastOrders = orders.filter(order => 
-    !order.delivery_status || order.delivery_status === 'delivered'
+    order.delivery_status === 'delivered'
   );
 
   if (!user) {
