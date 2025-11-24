@@ -44,7 +44,7 @@ const ChefPage = () => {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
       <HeaderNav />
-      <main className="pt-4">
+      <main className="pt-16">
         <section className="relative">
           {chef.banner && (
             <div className="relative h-56 md:h-72 w-full overflow-hidden">
