@@ -212,20 +212,22 @@ const Checkout = () => {
     // Fetch chef pickup address for demo chef
     const { data: chefProfile } = await supabase
       .from("chef_profiles")
-      .select("pickup_address")
+      .select("pickup_address, city, zip")
       .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
       .maybeSingle();
     
-    if (!chefProfile?.pickup_address) {
+    if (!chefProfile?.pickup_address || !chefProfile?.city || !chefProfile?.zip) {
       console.error("Chef pickup address not found");
       return;
     }
+
+    const pickup_address = `${chefProfile.pickup_address}, ${chefProfile.city} ${chefProfile.zip}`;
 
     const { data, error } = await supabase.functions.invoke("doordash-quote", {
       body: { 
         dropoff_address, 
         dropoff_phone: phone,
-        pickup_address: chefProfile.pickup_address,
+        pickup_address,
       },
     });
     if (error) {
