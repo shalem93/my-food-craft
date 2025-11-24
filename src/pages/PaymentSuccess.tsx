@@ -29,9 +29,15 @@ const PaymentSuccess = () => {
         if (paymentIntentId) {
           setRedirecting(true);
           
-          const result = await supabase.functions.invoke("doordash-create", { 
-            body: { payment_intent_id: paymentIntentId, payment_intent_client_secret: clientSecret } 
-          });
+          // Only include client_secret if it exists
+          const body: { payment_intent_id: string; payment_intent_client_secret?: string } = {
+            payment_intent_id: paymentIntentId
+          };
+          if (clientSecret) {
+            body.payment_intent_client_secret = clientSecret;
+          }
+          
+          const result = await supabase.functions.invoke("doordash-create", { body });
           console.log("DoorDash create result:", result);
           
           // Navigate immediately
