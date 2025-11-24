@@ -104,7 +104,9 @@ const OrderTracking = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'Order Confirmed - Chef is preparing your meal';
+        return 'Dasher Confirmed - Driver has accepted your order';
+      case 'dasher_arriving':
+        return 'Dasher Arriving - Driver is heading to pickup location';
       case 'picked_up':
         return 'Out for Delivery - Your order is on the way';
       case 'delivered':
@@ -270,13 +272,19 @@ const OrderTracking = () => {
                 {order.delivery_status === 'confirmed' && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Chef confirmed and is preparing your meal</span>
+                    <span>Dasher confirmed - Driver accepted your order</span>
+                  </div>
+                )}
+                {order.delivery_status === 'dasher_arriving' && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span>Dasher is arriving at pickup location</span>
                   </div>
                 )}
                 {order.delivery_status === 'picked_up' && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Driver picked up your order</span>
+                    <span>Driver picked up your order and is on the way</span>
                   </div>
                 )}
                 {order.delivery_status === 'delivered' && (
