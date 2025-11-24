@@ -11,7 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
-const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
+const PaymentForm = ({ 
+  onConfirmed, 
+  orderId, 
+  deliveryInfo 
+}: { 
+  onConfirmed: () => void;
+  orderId: string | null;
+  deliveryInfo: { fullName: string; phone: string; address: string; city: string; zip: string; deliveryFeeCents: number | null };
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -26,6 +34,21 @@ const PaymentForm = ({ onConfirmed }: { onConfirmed: () => void }) => {
     setSubmitting(true);
     
     try {
+      // Save delivery info to order before payment
+      if (orderId && deliveryInfo.address && deliveryInfo.phone) {
+        const dropoff_address = `${deliveryInfo.address}, ${deliveryInfo.city} ${deliveryInfo.zip}`;
+        await supabase
+          .from("orders")
+          .update({
+            dropoff_address,
+            dropoff_phone: deliveryInfo.phone,
+            dropoff_business_name: deliveryInfo.fullName,
+            delivery_fee_cents: deliveryInfo.deliveryFeeCents,
+          })
+          .eq("id", orderId);
+        console.log("Delivery info saved to order before payment");
+      }
+      
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: { return_url: `${window.location.origin}/payment-success` },
@@ -296,7 +319,11 @@ const Checkout = () => {
               <p className="text-sm text-muted-foreground">Preparing secure payment...</p>
             ) : (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm onConfirmed={() => clear()} />
+                <PaymentForm 
+                  onConfirmed={() => clear()} 
+                  orderId={orderId}
+                  deliveryInfo={{ fullName, phone, address, city, zip, deliveryFeeCents }}
+                />
               </Elements>
             )}
           </div>
