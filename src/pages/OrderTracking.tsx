@@ -58,6 +58,34 @@ const OrderTracking = () => {
     };
 
     fetchOrder();
+
+    // Set up real-time subscription for order updates
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('order_id');
+    const paymentIntentId = urlParams.get('payment_intent_id');
+
+    if (!orderId && !paymentIntentId) return;
+
+    const channel = supabase
+      .channel('order-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: orderId ? `id=eq.${orderId}` : `stripe_payment_intent_id=eq.${paymentIntentId}`
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          setOrder(payload.new as Order);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getStatusIcon = (status: string) => {
