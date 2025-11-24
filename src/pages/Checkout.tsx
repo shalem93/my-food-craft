@@ -232,6 +232,8 @@ const Checkout = () => {
     });
     if (error) {
       console.error(error);
+      const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
+      alert(errorMessage);
       return;
     }
     if (data?.delivery_fee_cents) {
