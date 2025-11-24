@@ -40,7 +40,17 @@ const PaymentSuccess = () => {
           const result = await supabase.functions.invoke("doordash-create", { body });
           console.log("DoorDash create result:", result);
           
-          // Navigate immediately
+          if (result.error) {
+            console.error("DoorDash create error:", result.error);
+            // Check if it's a distance error
+            const errorMessage = result.data?.message || "Could not arrange delivery";
+            alert(errorMessage);
+            // Still redirect to tracking page - order is created but delivery failed
+            window.location.href = `/order-tracking?payment_intent_id=${paymentIntentId}`;
+            return;
+          }
+          
+          // Navigate on success
           window.location.href = `/order-tracking?payment_intent_id=${paymentIntentId}`;
         } else {
           console.error("No payment intent ID found in URL");
