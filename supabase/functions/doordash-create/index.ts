@@ -13,6 +13,25 @@ const DeliveryCreateSchema = z.object({
   payment_intent_client_secret: z.string().optional(),
 });
 
+// Base64url decode helper
+function base64UrlDecode(base64Url: string): Uint8Array {
+  // Replace URL-safe characters
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding if needed
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const base64Padded = base64 + padding;
+  
+  // Decode base64 to binary string
+  const binaryString = atob(base64Padded);
+  
+  // Convert binary string to Uint8Array
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 // Generate DoorDash JWT
 async function generateDoorDashJWT() {
   const keyId = Deno.env.get("DOORDASH_KEY_ID");
@@ -32,9 +51,12 @@ async function generateDoorDashJWT() {
     iat: Math.floor(Date.now() / 1000),
   };
 
+  // Decode the base64url-encoded signing secret
+  const decodedSecret = base64UrlDecode(signingSecret);
+  
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(signingSecret),
+    decodedSecret,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
