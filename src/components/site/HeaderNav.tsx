@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +16,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 const HeaderNav = () => {
   const { user, signOut, userRole, userRoles, switchRole } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRoleSwitch = (role: string) => {
+    switchRole(role as any);
+    const destination = role === "chef" ? "/chef-dashboard" : "/";
+    navigate(destination, { replace: true });
+  };
 
   return (
     <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
@@ -92,7 +99,7 @@ const HeaderNav = () => {
                     {userRoles.map((role) => (
                       <DropdownMenuItem 
                         key={role}
-                        onClick={() => switchRole(role)}
+                        onClick={() => handleRoleSwitch(role)}
                         className={userRole === role ? "bg-accent" : ""}
                       >
                         <span className="capitalize">{role}</span>
