@@ -125,6 +125,26 @@ serve(async (req) => {
     if (!quoteResponse.ok) {
       const errorText = await quoteResponse.text();
       console.error("DoorDash API error:", errorText);
+      
+      // Parse error for better user feedback
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.reason === "distance_too_long") {
+          return new Response(
+            JSON.stringify({ 
+              error: "Distance too long", 
+              message: "The delivery distance exceeds DoorDash's service area. Please use addresses that are closer together." 
+            }), 
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 400,
+            }
+          );
+        }
+      } catch (e) {
+        // If parsing fails, continue with generic error
+      }
+      
       throw new Error(`DoorDash API error: ${quoteResponse.status}`);
     }
 
