@@ -151,7 +151,11 @@ const Checkout = () => {
       setStripePromise(loadStripe(pkRes.publishableKey));
 
       const { data, error } = await supabase.functions.invoke("create-payment-intent", {
-        body: { amount: amountCents, currency: "usd" },
+        body: { 
+          amount: amountCents, 
+          currency: "usd",
+          chef_user_id: "89a542ee-b062-46c5-b3be-631e8cdcd939" // Demo chef with pickup address
+        },
       });
       if (error || !data?.client_secret) {
         console.error(error || "No client secret returned");
