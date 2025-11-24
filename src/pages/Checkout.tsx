@@ -208,8 +208,25 @@ const Checkout = () => {
   const requestQuote = async () => {
     if (!phone || !address || !city || !zip) return;
     const dropoff_address = `${address}, ${city} ${zip}`;
+    
+    // Fetch chef pickup address for demo chef
+    const { data: chefProfile } = await supabase
+      .from("chef_profiles")
+      .select("pickup_address")
+      .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
+      .maybeSingle();
+    
+    if (!chefProfile?.pickup_address) {
+      console.error("Chef pickup address not found");
+      return;
+    }
+
     const { data, error } = await supabase.functions.invoke("doordash-quote", {
-      body: { dropoff_address, dropoff_phone: phone },
+      body: { 
+        dropoff_address, 
+        dropoff_phone: phone,
+        pickup_address: chefProfile.pickup_address,
+      },
     });
     if (error) {
       console.error(error);
