@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export type AppRole = "chef" | "customer";
 
@@ -24,6 +25,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,6 +181,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(role);
       localStorage.setItem("activeRole", role);
       toast({ title: "Role switched", description: `Now using ${role} account` });
+      
+      // Navigate to appropriate dashboard
+      const destination = role === "chef" ? "/chef-dashboard" : "/";
+      navigate(destination, { replace: true });
     }
   };
 
