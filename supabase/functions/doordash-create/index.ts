@@ -215,8 +215,8 @@ serve(async (req) => {
     const deliveryData = await deliveryResponse.json();
     console.log("DoorDash delivery created:", deliveryData);
 
-    // Use external_delivery_id to construct tracking URL for consistency
-    const delivery_tracking_url = `https://www.doordash.com/orders/drive/${external_delivery_id}`;
+    // Use DoorDash's tracking_url directly - it contains the correct urlCode
+    const delivery_tracking_url = deliveryData.tracking_url;
     const delivery_fee_cents = deliveryData.fee || order.delivery_fee_cents || 599;
 
     console.log("Updating order with DoorDash details...");
