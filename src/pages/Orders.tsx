@@ -37,22 +37,50 @@ const Orders = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch orders
+        const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            public_chef_info!chef_user_id(display_name)
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching orders:', error);
+        if (ordersError) {
+          console.error('Error fetching orders:', ordersError);
           return;
         }
 
-        console.log('Fetched orders:', data);
-        setOrders(data as unknown as Order[] || []);
+        if (!ordersData || ordersData.length === 0) {
+          setOrders([]);
+          setLoading(false);
+          return;
+        }
+
+        // Get unique chef user IDs
+        const chefUserIds = [...new Set(ordersData.map(order => order.chef_user_id).filter(Boolean))];
+
+        // Fetch chef info for all chefs
+        const { data: chefsData, error: chefsError } = await supabase
+          .from('public_chef_info')
+          .select('user_id, display_name')
+          .in('user_id', chefUserIds);
+
+        if (chefsError) {
+          console.error('Error fetching chef info:', chefsError);
+        }
+
+        // Create a map of chef user_id to chef info
+        const chefMap = new Map(
+          chefsData?.map(chef => [chef.user_id, chef]) || []
+        );
+
+        // Combine orders with chef info
+        const ordersWithChefInfo = ordersData.map(order => ({
+          ...order,
+          public_chef_info: order.chef_user_id ? chefMap.get(order.chef_user_id) : null
+        }));
+
+        console.log('Fetched orders:', ordersWithChefInfo);
+        setOrders(ordersWithChefInfo as Order[]);
       } catch (error) {
         console.error('Error:', error);
       } finally {
