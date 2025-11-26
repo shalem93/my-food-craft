@@ -20,7 +20,7 @@ interface Order {
   created_at: string;
   chef_user_id: string;
   delivery_tracking_url?: string;
-  chef_profiles?: {
+  public_chef_info?: {
     display_name: string;
   } | null;
 }
@@ -41,7 +41,7 @@ const Orders = () => {
           .from('orders')
           .select(`
             *,
-            chef_profiles(display_name)
+            public_chef_info!chef_user_id(display_name)
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -51,6 +51,7 @@ const Orders = () => {
           return;
         }
 
+        console.log('Fetched orders:', data);
         setOrders(data as unknown as Order[] || []);
       } catch (error) {
         console.error('Error:', error);
@@ -166,7 +167,7 @@ const Orders = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle className="text-lg">
-                              Order from {order.chef_profiles?.display_name || 'Chef'}
+                              Order from {order.public_chef_info?.display_name || 'Chef'}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(order.created_at), 'PPP')}
@@ -207,7 +208,7 @@ const Orders = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle className="text-lg">
-                              Order from {order.chef_profiles?.display_name || 'Chef'}
+                              Order from {order.public_chef_info?.display_name || 'Chef'}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(order.created_at), 'PPP')}
@@ -248,7 +249,7 @@ const Orders = () => {
           onOpenChange={setReviewDialogOpen}
           orderId={selectedOrder.id}
           chefUserId={selectedOrder.chef_user_id}
-          chefName={selectedOrder.chef_profiles?.display_name}
+          chefName={selectedOrder.public_chef_info?.display_name}
         />
       )}
     </div>
