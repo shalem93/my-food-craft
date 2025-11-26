@@ -20,60 +20,20 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("DoorDash webhook received:", JSON.stringify(payload, null, 2));
 
-    // DoorDash sends events with this structure:
+    // DoorDash webhook format:
     // {
-    //   "event_id": "string",
-    //   "event_type": "delivery_status",
-    //   "event_time": "2024-01-01T00:00:00Z",
-    //   "data": {
-    //     "external_delivery_id": "your-order-id",
-    //     "delivery_status": "dasher_confirmed" | "dasher_confirmed_arrival" | "pickup_complete" | "dropoff_complete",
-    //     ...
-    //   }
+    //   "event_name": "DASHER_CONFIRMED" | "DASHER_CONFIRMED_PICKUP_ARRIVAL" | "DASHER_PICKED_UP" | "DASHER_CONFIRMED_DROPOFF_ARRIVAL" | "DASHER_DROPPED_OFF" | "DELIVERY_CANCELLED",
+    //   "external_delivery_id": "your-order-id",
+    //   "created_at": "2025-11-26T00:00:00Z",
+    //   ...
     // }
 
-    const { event_type, data } = payload;
+    const { event_name, external_delivery_id } = payload;
 
-    if (event_type === "delivery_status") {
-      const { external_delivery_id, delivery_status } = data;
-
-      // Map DoorDash status to our status
-      let ourStatus = delivery_status;
-      
-      // Map DoorDash statuses to more user-friendly ones
-      if (delivery_status === "dasher_confirmed") {
-        ourStatus = "confirmed";
-      } else if (delivery_status === "dasher_confirmed_arrival") {
-        ourStatus = "dasher_arriving";
-      } else if (delivery_status === "pickup_complete") {
-        ourStatus = "picked_up";
-      } else if (delivery_status === "dropoff_complete") {
-        ourStatus = "delivered";
-      }
-
-      console.log(`Updating order ${external_delivery_id} to status: ${ourStatus}`);
-
-      // Update the order in the database
-      const { data: updateData, error: updateError } = await supabaseClient
-        .from("orders")
-        .update({ 
-          delivery_status: ourStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq("external_delivery_id", external_delivery_id);
-
-      if (updateError) {
-        console.error("Error updating order:", updateError);
-        throw updateError;
-      }
-
-      console.log("Order updated successfully:", updateData);
-
-      // TODO: Send SMS notification to user
-      // You can call the send-sms edge function here if needed
-
+    if (!external_delivery_id) {
+      console.log("No external_delivery_id in webhook payload");
       return new Response(
-        JSON.stringify({ success: true, status: ourStatus }),
+        JSON.stringify({ success: true, message: "No external_delivery_id" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -81,9 +41,62 @@ serve(async (req) => {
       );
     }
 
-    // For other event types, just acknowledge receipt
+    // Map DoorDash event names to our delivery statuses
+    let ourStatus: string | null = null;
+    
+    switch (event_name) {
+      case "DASHER_CONFIRMED":
+        ourStatus = "confirmed";
+        break;
+      case "DASHER_CONFIRMED_PICKUP_ARRIVAL":
+        ourStatus = "dasher_arriving";
+        break;
+      case "DASHER_PICKED_UP":
+        ourStatus = "picked_up";
+        break;
+      case "DASHER_CONFIRMED_DROPOFF_ARRIVAL":
+        ourStatus = "arriving_at_dropoff";
+        break;
+      case "DASHER_DROPPED_OFF":
+        ourStatus = "delivered";
+        break;
+      case "DELIVERY_CANCELLED":
+        ourStatus = "cancelled";
+        break;
+      default:
+        console.log(`Unknown event_name: ${event_name}`);
+        return new Response(
+          JSON.stringify({ success: true, message: "Event type not handled" }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+    }
+
+    console.log(`Updating order ${external_delivery_id} to status: ${ourStatus}`);
+
+    // Update the order in the database
+    const { data: updateData, error: updateError } = await supabaseClient
+      .from("orders")
+      .update({ 
+        delivery_status: ourStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq("external_delivery_id", external_delivery_id);
+
+    if (updateError) {
+      console.error("Error updating order:", updateError);
+      throw updateError;
+    }
+
+    console.log("Order updated successfully:", updateData);
+
+    // TODO: Send SMS notification to user
+    // You can call the send-sms edge function here if needed
+
     return new Response(
-      JSON.stringify({ success: true, message: "Event received" }),
+      JSON.stringify({ success: true, status: ourStatus, external_delivery_id }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
