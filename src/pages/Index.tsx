@@ -31,6 +31,20 @@ const Index = () => {
 
   const { user, loading, userRole } = useAuth();
 
+  // Check for active order and redirect to tracking page
+  useEffect(() => {
+    const orderId = localStorage.getItem('current_order_id');
+    const paymentIntentId = localStorage.getItem('current_payment_intent_id');
+    
+    if (orderId || paymentIntentId) {
+      console.log('Found active order in localStorage, redirecting to tracking page');
+      const params = orderId 
+        ? `order_id=${orderId}` 
+        : `payment_intent_id=${paymentIntentId}`;
+      window.location.href = `/order-tracking?${params}`;
+    }
+  }, []);
+
   const sorted = useMemo(() => {
     if (!coords) return chefs;
     return [...chefs]
