@@ -110,6 +110,36 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_name: string
+          menu_item_id: string
+          order_id: string
+          price_cents: number
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_name: string
+          menu_item_id: string
+          order_id: string
+          price_cents: number
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_name?: string
+          menu_item_id?: string
+          order_id?: string
+          price_cents?: number
+          quantity?: number
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number

@@ -7,6 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Package, Truck, CheckCircle2, Phone } from "lucide-react";
 
+interface OrderItem {
+  id: string;
+  item_name: string;
+  quantity: number;
+  price_cents: number;
+}
+
 interface Order {
   id: string;
   delivery_status: string;
@@ -18,6 +25,9 @@ interface Order {
   amount: number;
   delivery_fee_cents?: number;
   created_at: string;
+  chef_user_id?: string;
+  order_items?: OrderItem[];
+  chef_name?: string;
 }
 
 const OrderTracking = () => {
@@ -72,7 +82,29 @@ const OrderTracking = () => {
         console.error('Error fetching order:', error);
       } else {
         console.log("Order data:", data);
-        setOrder(data);
+        
+        // Fetch order items
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', data.id);
+        
+        // Fetch chef name
+        let chefName = 'Chef';
+        if (data.chef_user_id) {
+          const { data: chefInfo } = await supabase
+            .from('public_chef_info')
+            .select('display_name')
+            .eq('user_id', data.chef_user_id)
+            .maybeSingle();
+          if (chefInfo) chefName = chefInfo.display_name || 'Chef';
+        }
+        
+        setOrder({
+          ...data,
+          order_items: orderItems || [],
+          chef_name: chefName,
+        });
         
         // Clear localStorage if order is delivered or cancelled
         if (data.delivery_status === 'delivered' || data.delivery_status === 'cancelled') {
@@ -274,18 +306,35 @@ const OrderTracking = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Order Total</span>
+              <div className="pt-4 border-t space-y-3">
+                <div>
+                  <p className="font-medium mb-2">Order from {order.chef_name}</p>
+                  {order.order_items && order.order_items.length > 0 && (
+                    <ul className="space-y-2">
+                      {order.order_items.map((item) => (
+                        <li key={item.id} className="flex justify-between text-sm">
+                          <span>{item.item_name} × {item.quantity}</span>
+                          <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="flex justify-between items-center text-sm text-muted-foreground pt-2">
+                  <span>Subtotal</span>
+                  <span>${(order.amount / 100).toFixed(2)}</span>
+                </div>
+                {order.delivery_fee_cents && (
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>Delivery Fee</span>
+                    <span>${(order.delivery_fee_cents / 100).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="font-medium">Total</span>
                   <span className="font-bold">
                     ${((order.amount + (order.delivery_fee_cents || 0)) / 100).toFixed(2)}
                   </span>
-                </div>
-                <div className="flex justify-between items-center text-sm text-muted-foreground">
-                  <span>Subtotal: ${(order.amount / 100).toFixed(2)}</span>
-                  {order.delivery_fee_cents && (
-                    <span>Delivery: ${(order.delivery_fee_cents / 100).toFixed(2)}</span>
-                  )}
                 </div>
               </div>
 
