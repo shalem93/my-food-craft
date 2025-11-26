@@ -96,12 +96,17 @@ const OrderTracking = () => {
       paymentIntentId = localStorage.getItem('current_payment_intent_id');
     }
 
-    if (!orderId && !paymentIntentId) return;
+    if (!orderId && !paymentIntentId) {
+      console.log('No order ID or payment intent ID for subscription');
+      return;
+    }
 
     console.log('Setting up real-time subscription for:', { orderId, paymentIntentId });
 
+    // Use unique channel name per order to avoid conflicts
+    const channelName = `order-updates-${orderId || paymentIntentId}`;
     const channel = supabase
-      .channel('order-updates')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -111,13 +116,18 @@ const OrderTracking = () => {
           filter: orderId ? `id=eq.${orderId}` : `stripe_payment_intent_id=eq.${paymentIntentId}`
         },
         (payload) => {
-          console.log('Order updated via real-time:', payload);
-          setOrder(payload.new as Order);
+          console.log('🔄 Real-time order update received:', payload);
+          const updatedOrder = payload.new as Order;
+          console.log('📦 New delivery status:', updatedOrder.delivery_status);
+          setOrder(updatedOrder);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+      });
 
     return () => {
+      console.log('🔌 Unsubscribing from channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, []);
