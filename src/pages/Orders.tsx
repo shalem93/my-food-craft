@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import ReviewDialog from "@/components/site/ReviewDialog";
 import { Star } from "lucide-react";
 
+interface OrderItem {
+  id: string;
+  item_name: string;
+  quantity: number;
+  price_cents: number;
+}
+
 interface Order {
   id: string;
   amount: number;
@@ -23,6 +30,7 @@ interface Order {
   public_chef_info?: {
     display_name: string;
   } | null;
+  order_items?: OrderItem[];
 }
 
 const Orders = () => {
@@ -73,10 +81,27 @@ const Orders = () => {
           chefsData?.map(chef => [chef.user_id, chef]) || []
         );
 
-        // Combine orders with chef info
+        // Fetch order items for all orders
+        const orderIds = ordersData.map(order => order.id);
+        const { data: orderItemsData } = await supabase
+          .from('order_items')
+          .select('*')
+          .in('order_id', orderIds);
+
+        // Create a map of order_id to order items
+        const orderItemsMap = new Map<string, OrderItem[]>();
+        orderItemsData?.forEach(item => {
+          if (!orderItemsMap.has(item.order_id)) {
+            orderItemsMap.set(item.order_id, []);
+          }
+          orderItemsMap.get(item.order_id)?.push(item as OrderItem);
+        });
+
+        // Combine orders with chef info and order items
         const ordersWithChefInfo = ordersData.map(order => ({
           ...order,
-          public_chef_info: order.chef_user_id ? chefMap.get(order.chef_user_id) : null
+          public_chef_info: order.chef_user_id ? chefMap.get(order.chef_user_id) : null,
+          order_items: orderItemsMap.get(order.id) || [],
         }));
 
         console.log('Fetched orders:', ordersWithChefInfo);
@@ -209,11 +234,24 @@ const Orders = () => {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-3">
+                        {order.order_items && order.order_items.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Items:</p>
+                            <ul className="space-y-1">
+                              {order.order_items.map((item) => (
+                                <li key={item.id} className="flex justify-between text-sm text-muted-foreground">
+                                  <span>{item.item_name} × {item.quantity}</span>
+                                  <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {order.delivery_tracking_url && (
                           <Link 
                             to={`/order-tracking?order_id=${order.id}`}
-                            className="text-primary hover:underline"
+                            className="text-primary hover:underline inline-block"
                           >
                             Track Order →
                           </Link>
@@ -248,7 +286,20 @@ const Orders = () => {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-3">
+                        {order.order_items && order.order_items.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Items:</p>
+                            <ul className="space-y-1">
+                              {order.order_items.map((item) => (
+                                <li key={item.id} className="flex justify-between text-sm text-muted-foreground">
+                                  <span>{item.item_name} × {item.quantity}</span>
+                                  <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

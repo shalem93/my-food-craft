@@ -12,6 +12,12 @@ const PaymentIntentSchema = z.object({
   amount: z.number().int().min(50).max(1000000),
   currency: z.string().min(3).max(3).default("usd"),
   chef_user_id: z.string().uuid().nullable().optional(),
+  items: z.array(z.object({
+    menu_item_id: z.string().uuid(),
+    name: z.string(),
+    price_cents: z.number().int(),
+    quantity: z.number().int().min(1),
+  })).optional(),
 });
 
 serve(async (req) => {
@@ -95,6 +101,19 @@ serve(async (req) => {
       currency: validated.currency,
       status: paymentIntent.status,
     }).select("id").maybeSingle();
+
+    // Save order items if provided
+    if (inserted?.id && validated.items && validated.items.length > 0) {
+      const orderItems = validated.items.map(item => ({
+        order_id: inserted.id,
+        menu_item_id: item.menu_item_id,
+        item_name: item.name,
+        price_cents: item.price_cents,
+        quantity: item.quantity,
+      }));
+
+      await supabaseService.from("order_items").insert(orderItems);
+    }
 
     return new Response(
       JSON.stringify({ 
