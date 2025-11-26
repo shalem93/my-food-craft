@@ -87,10 +87,18 @@ const OrderTracking = () => {
 
     // Set up real-time subscription for order updates
     const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('order_id');
-    const paymentIntentId = urlParams.get('payment_intent_id');
+    let orderId = urlParams.get('order_id');
+    let paymentIntentId = urlParams.get('payment_intent_id');
+
+    // Also check localStorage if URL params are missing
+    if (!orderId && !paymentIntentId) {
+      orderId = localStorage.getItem('current_order_id');
+      paymentIntentId = localStorage.getItem('current_payment_intent_id');
+    }
 
     if (!orderId && !paymentIntentId) return;
+
+    console.log('Setting up real-time subscription for:', { orderId, paymentIntentId });
 
     const channel = supabase
       .channel('order-updates')
@@ -103,7 +111,7 @@ const OrderTracking = () => {
           filter: orderId ? `id=eq.${orderId}` : `stripe_payment_intent_id=eq.${paymentIntentId}`
         },
         (payload) => {
-          console.log('Order updated:', payload);
+          console.log('Order updated via real-time:', payload);
           setOrder(payload.new as Order);
         }
       )
