@@ -155,12 +155,16 @@ const Checkout = () => {
           amount: amountCents, 
           currency: "usd",
           chef_user_id: "89a542ee-b062-46c5-b3be-631e8cdcd939", // Demo chef with pickup address
-          items: items.map(item => ({
-            menu_item_id: item.id,
-            name: item.name,
-            price_cents: Math.round(item.price * 100),
-            quantity: item.quantity,
-          })),
+          items: items.map(item => {
+            // Only include menu_item_id if it's a valid UUID
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+            return {
+              ...(isUUID ? { menu_item_id: item.id } : {}),
+              name: item.name,
+              price_cents: Math.round(item.price * 100),
+              quantity: item.quantity,
+            };
+          }),
         },
       });
       if (error || !data?.client_secret) {
