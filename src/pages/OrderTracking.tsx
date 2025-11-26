@@ -109,8 +109,12 @@ const OrderTracking = () => {
         return 'Dasher Arriving - Driver is heading to pickup location';
       case 'picked_up':
         return 'Out for Delivery - Your order is on the way';
+      case 'arriving_at_dropoff':
+        return 'Almost There - Driver is arriving at your location';
       case 'delivered':
         return 'Delivered - Enjoy your meal!';
+      case 'cancelled':
+        return 'Cancelled - This delivery was cancelled';
       default:
         return 'Processing your order...';
     }
@@ -269,22 +273,28 @@ const OrderTracking = () => {
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Order placed - {new Date(order.created_at).toLocaleTimeString()}</span>
                 </div>
-                {order.delivery_status === 'confirmed' && (
+                {['confirmed', 'dasher_arriving', 'picked_up', 'arriving_at_dropoff', 'delivered'].includes(order.delivery_status) && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
                     <span>Dasher confirmed - Driver accepted your order</span>
                   </div>
                 )}
-                {order.delivery_status === 'dasher_arriving' && (
+                {['dasher_arriving', 'picked_up', 'arriving_at_dropoff', 'delivered'].includes(order.delivery_status) && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Dasher is arriving at pickup location</span>
+                    <span>Dasher arrived at pickup location</span>
                   </div>
                 )}
-                {order.delivery_status === 'picked_up' && (
+                {['picked_up', 'arriving_at_dropoff', 'delivered'].includes(order.delivery_status) && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
                     <span>Driver picked up your order and is on the way</span>
+                  </div>
+                )}
+                {['arriving_at_dropoff', 'delivered'].includes(order.delivery_status) && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span>Driver is arriving at your location</span>
                   </div>
                 )}
                 {order.delivery_status === 'delivered' && (
