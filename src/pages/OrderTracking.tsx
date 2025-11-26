@@ -27,13 +27,33 @@ const OrderTracking = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const orderId = urlParams.get('order_id');
-      const paymentIntentId = urlParams.get('payment_intent_id');
+      let orderId = urlParams.get('order_id');
+      let paymentIntentId = urlParams.get('payment_intent_id');
+      
+      // If URL params are missing, try to get from localStorage
+      if (!orderId && !paymentIntentId) {
+        const storedOrderId = localStorage.getItem('current_order_id');
+        const storedPaymentIntentId = localStorage.getItem('current_payment_intent_id');
+        
+        if (storedOrderId) {
+          orderId = storedOrderId;
+        } else if (storedPaymentIntentId) {
+          paymentIntentId = storedPaymentIntentId;
+        }
+      } else {
+        // Store in localStorage for future refreshes
+        if (orderId) {
+          localStorage.setItem('current_order_id', orderId);
+        }
+        if (paymentIntentId) {
+          localStorage.setItem('current_payment_intent_id', paymentIntentId);
+        }
+      }
       
       console.log("Fetching order with:", { orderId, paymentIntentId });
       
       if (!orderId && !paymentIntentId) {
-        console.log("No order ID or payment intent ID found in URL");
+        console.log("No order ID or payment intent ID found in URL or localStorage");
         setLoading(false);
         return;
       }
@@ -53,6 +73,12 @@ const OrderTracking = () => {
       } else {
         console.log("Order data:", data);
         setOrder(data);
+        
+        // Clear localStorage if order is delivered
+        if (data.delivery_status === 'delivered') {
+          localStorage.removeItem('current_order_id');
+          localStorage.removeItem('current_payment_intent_id');
+        }
       }
       setLoading(false);
     };
