@@ -74,8 +74,9 @@ const OrderTracking = () => {
         console.log("Order data:", data);
         setOrder(data);
         
-        // Clear localStorage if order is delivered
-        if (data.delivery_status === 'delivered') {
+        // Clear localStorage if order is delivered or cancelled
+        if (data.delivery_status === 'delivered' || data.delivery_status === 'cancelled') {
+          console.log('Order is completed/cancelled, clearing localStorage');
           localStorage.removeItem('current_order_id');
           localStorage.removeItem('current_payment_intent_id');
         }
