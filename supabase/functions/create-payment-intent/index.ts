@@ -13,7 +13,7 @@ const PaymentIntentSchema = z.object({
   currency: z.string().min(3).max(3).default("usd"),
   chef_user_id: z.string().uuid().nullable().optional(),
   items: z.array(z.object({
-    menu_item_id: z.string().uuid(),
+    menu_item_id: z.string().uuid().optional(),
     name: z.string(),
     price_cents: z.number().int(),
     quantity: z.number().int().min(1),
@@ -106,7 +106,7 @@ serve(async (req) => {
     if (inserted?.id && validated.items && validated.items.length > 0) {
       const orderItems = validated.items.map(item => ({
         order_id: inserted.id,
-        menu_item_id: item.menu_item_id,
+        menu_item_id: item.menu_item_id || '00000000-0000-0000-0000-000000000000', // Use null UUID if not provided
         item_name: item.name,
         price_cents: item.price_cents,
         quantity: item.quantity,
