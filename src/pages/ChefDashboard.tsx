@@ -334,6 +334,36 @@ const ChefDashboard = () => {
       return;
     }
 
+    // Geocode the address to get lat/lng
+    setLoading(true);
+    let lat = null;
+    let lng = null;
+
+    try {
+      const fullAddress = `${addressForm.pickup_address}, ${addressForm.city || ''}, ${addressForm.zip || ''}`.trim();
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        lat = parseFloat(data[0].lat);
+        lng = parseFloat(data[0].lon);
+      } else {
+        toast({ 
+          description: "Could not find coordinates for this address. Please check the address.", 
+          variant: "destructive" 
+        });
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      toast({ description: "Error looking up address coordinates.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
     const profileData = {
       user_id: uid,
       pickup_address: addressForm.pickup_address,
@@ -343,8 +373,8 @@ const ChefDashboard = () => {
       zip: addressForm.zip,
       display_name: addressForm.display_name,
       bio: addressForm.bio,
-      lat: addressForm.lat,
-      lng: addressForm.lng
+      lat,
+      lng
     };
 
     let error;
@@ -360,6 +390,8 @@ const ChefDashboard = () => {
         .insert(profileData);
       error = insertError;
     }
+
+    setLoading(false);
 
     if (error) {
       toast({ description: error.message, variant: "destructive" });
@@ -675,16 +707,6 @@ const ChefDashboard = () => {
                         <Label className="text-muted-foreground text-xs">Bio</Label>
                         <p className="text-sm">{chefProfile.bio || "Not set"}</p>
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-muted-foreground text-xs">Location (Latitude)</Label>
-                          <p className="text-sm font-medium">{chefProfile.lat || "Not set"}</p>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground text-xs">Location (Longitude)</Label>
-                          <p className="text-sm font-medium">{chefProfile.lng || "Not set"}</p>
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -766,66 +788,21 @@ const ChefDashboard = () => {
                           placeholder="Passionate about authentic Italian cuisine..."
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          Location Coordinates
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Set your location so customers can find you when searching nearby.
-                        </p>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="lat">Latitude</Label>
-                            <Input 
-                              id="lat"
-                              type="number"
-                              step="any"
-                              value={addressForm.lat || ""}
-                              onChange={(e) => setAddressForm(f => ({...f, lat: e.target.value ? parseFloat(e.target.value) : null}))}
-                              placeholder="40.7128"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="lng">Longitude</Label>
-                            <Input 
-                              id="lng"
-                              type="number"
-                              step="any"
-                              value={addressForm.lng || ""}
-                              onChange={(e) => setAddressForm(f => ({...f, lng: e.target.value ? parseFloat(e.target.value) : null}))}
-                              placeholder="-74.0060"
-                            />
-                          </div>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            if (!("geolocation" in navigator)) {
-                              toast({ description: "Geolocation not supported", variant: "destructive" });
-                              return;
-                            }
-                            navigator.geolocation.getCurrentPosition(
-                              (pos) => {
-                                setAddressForm(f => ({
-                                  ...f, 
-                                  lat: pos.coords.latitude, 
-                                  lng: pos.coords.longitude
-                                }));
-                                toast({ description: "Location detected!" });
-                              },
-                              () => toast({ description: "Location access denied", variant: "destructive" }),
-                              { enableHighAccuracy: true, timeout: 10000 }
-                            );
-                          }}
-                        >
-                          <MapPin className="h-4 w-4 mr-2" />
-                          Use My Current Location
-                        </Button>
-                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Your location coordinates will be automatically determined from your address
+                      </p>
                       <div className="flex gap-2">
-                        <Button onClick={handleSaveAddress}>Save Profile</Button>
+                        <Button onClick={handleSaveAddress} disabled={loading}>
+                          {loading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            'Save Profile'
+                          )}
+                        </Button>
                         {chefProfile && (
                           <Button variant="outline" onClick={() => setShowAddressForm(false)}>
                             Cancel
