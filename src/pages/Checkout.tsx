@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
+import { useToast } from "@/hooks/use-toast";
 const PaymentForm = ({ 
   onConfirmed, 
   orderId, 
@@ -89,6 +90,7 @@ const PaymentForm = ({
 const Checkout = () => {
   const { items, total, clear } = useCart();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -243,7 +245,11 @@ const Checkout = () => {
     if (error) {
       console.error(error);
       const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
-      alert(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Delivery unavailable",
+        description: errorMessage,
+      });
       return;
     }
     if (data?.delivery_fee_cents) {
