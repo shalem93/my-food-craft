@@ -12,9 +12,10 @@ interface ReviewsSectionProps {
   chefSlug: string;
   itemId?: string; // when provided, show dish-specific reviews
   title?: string;
+  showForm?: boolean; // controls if review submission form is shown
 }
 
-export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSectionProps) {
+export default function ReviewsSection({ chefSlug, itemId, title, showForm = true }: ReviewsSectionProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -131,7 +132,7 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
         </p>
       </div>
 
-      {user && hasCompletedOrders && (
+      {showForm && user && hasCompletedOrders && (
         <form onSubmit={onSubmit} className="rounded-xl border p-4 grid gap-4 bg-card">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -178,13 +179,13 @@ export default function ReviewsSection({ chefSlug, itemId, title }: ReviewsSecti
         </form>
       )}
 
-      {user && !hasCompletedOrders && (
+      {showForm && user && !hasCompletedOrders && (
         <div className="rounded-xl border p-4 bg-muted/50 text-center">
           <p className="text-sm text-muted-foreground">Complete an order to leave a review</p>
         </div>
       )}
 
-      {!user && (
+      {showForm && !user && (
         <div className="rounded-xl border p-4 bg-muted/50 text-center">
           <p className="text-sm text-muted-foreground">Sign in to see review form</p>
         </div>
