@@ -280,18 +280,42 @@ const ChefDashboard = () => {
   }, []);
 
   const startOnboarding = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.functions.invoke("connect-create-account");
-    setLoading(false);
-    if (error) {
+    try {
+      console.log("Starting Stripe onboarding...");
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke("connect-create-account");
+      console.log("Stripe onboarding response:", { data, error });
+      setLoading(false);
+      
+      if (error) {
+        console.error("Stripe onboarding error:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Error starting onboarding",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (data?.url) {
+        console.log("Redirecting to:", data.url);
+        window.location.href = data.url;
+      } else {
+        toast({
+          title: "Error",
+          description: "No redirect URL received from Stripe",
+          variant: "destructive"
+        });
+      }
+    } catch (err: any) {
+      console.error("Exception in startOnboarding:", err);
+      setLoading(false);
       toast({
         title: "Error",
-        description: error.message || "Error starting onboarding",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive"
       });
-      return;
     }
-    if (data?.url) window.location.href = data.url;
   };
 
   const dollars = (cents: number) => (cents / 100).toFixed(2);
