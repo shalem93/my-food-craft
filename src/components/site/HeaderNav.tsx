@@ -41,8 +41,8 @@ const HeaderNav = () => {
           {userRole === 'chef' ? (
             <>
               <NavLink to="/chef-dashboard" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground transition-colors"}>Dashboard</NavLink>
-              <a href="#menu" className="text-muted-foreground hover:text-foreground transition-colors">My Menu</a>
-              <a href="#orders" className="text-muted-foreground hover:text-foreground transition-colors">Orders</a>
+              <NavLink to="/chef-dashboard#menu" className="text-muted-foreground hover:text-foreground transition-colors">My Menu</NavLink>
+              <NavLink to="/chef-dashboard#orders" className="text-muted-foreground hover:text-foreground transition-colors">Orders</NavLink>
             </>
           ) : (
             <>
