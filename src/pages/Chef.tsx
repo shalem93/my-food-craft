@@ -77,7 +77,7 @@ const ChefPage = () => {
             ))}
           </div>
 
-          <ReviewsSection chefSlug={chef.slug} title="Customer reviews" />
+          <ReviewsSection chefSlug={chef.slug} title="Customer reviews" showForm={false} />
         </section>
       </main>
       <CartSheet />
