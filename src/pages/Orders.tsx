@@ -248,6 +248,12 @@ const Orders = () => {
                                   <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
                                 </li>
                               ))}
+                              {order.delivery_fee_cents && (
+                                <li className="flex justify-between text-sm text-muted-foreground pt-1 border-t">
+                                  <span>Delivery Fee</span>
+                                  <span>${(order.delivery_fee_cents / 100).toFixed(2)}</span>
+                                </li>
+                              )}
                             </ul>
                           </div>
                         )}
@@ -302,6 +308,12 @@ const Orders = () => {
                                   <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
                                 </li>
                               ))}
+                              {order.delivery_fee_cents && (
+                                <li className="flex justify-between text-sm text-muted-foreground pt-1 border-t">
+                                  <span>Delivery Fee</span>
+                                  <span>${(order.delivery_fee_cents / 100).toFixed(2)}</span>
+                                </li>
+                              )}
                             </ul>
                           </div>
                         )}
