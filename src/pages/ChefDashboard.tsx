@@ -68,7 +68,9 @@ const ChefDashboard = () => {
     city: "",
     zip: "",
     display_name: "",
-    bio: ""
+    bio: "",
+    lat: null as number | null,
+    lng: null as number | null
   });
 
   // Handle URL hash to set active tab
@@ -162,15 +164,17 @@ const ChefDashboard = () => {
       console.log("Loaded chef profile:", profile);
       setChefProfile(profile);
       if (profile) {
-        setAddressForm({
-          pickup_address: profile.pickup_address || "",
-          pickup_phone: profile.pickup_phone || "",
-          pickup_business_name: profile.pickup_business_name || "",
-          city: profile.city || "",
-          zip: profile.zip || "",
-          display_name: profile.display_name || "",
-          bio: profile.bio || ""
-        });
+      setAddressForm({
+        pickup_address: profile.pickup_address || "",
+        pickup_phone: profile.pickup_phone || "",
+        pickup_business_name: profile.pickup_business_name || "",
+        city: profile.city || "",
+        zip: profile.zip || "",
+        display_name: profile.display_name || "",
+        bio: profile.bio || "",
+        lat: profile.lat,
+        lng: profile.lng
+      });
         setIsOnline(profile.is_online || false);
         setSchedule(profile.schedule || schedule);
         setShowAddressForm(false); // Hide form if profile exists
@@ -338,7 +342,9 @@ const ChefDashboard = () => {
       city: addressForm.city,
       zip: addressForm.zip,
       display_name: addressForm.display_name,
-      bio: addressForm.bio
+      bio: addressForm.bio,
+      lat: addressForm.lat,
+      lng: addressForm.lng
     };
 
     let error;
@@ -669,6 +675,16 @@ const ChefDashboard = () => {
                         <Label className="text-muted-foreground text-xs">Bio</Label>
                         <p className="text-sm">{chefProfile.bio || "Not set"}</p>
                       </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-muted-foreground text-xs">Location (Latitude)</Label>
+                          <p className="text-sm font-medium">{chefProfile.lat || "Not set"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground text-xs">Location (Longitude)</Label>
+                          <p className="text-sm font-medium">{chefProfile.lng || "Not set"}</p>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -749,6 +765,64 @@ const ChefDashboard = () => {
                           onChange={(e) => setAddressForm(f => ({...f, bio: e.target.value}))}
                           placeholder="Passionate about authentic Italian cuisine..."
                         />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Location Coordinates
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Set your location so customers can find you when searching nearby.
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="lat">Latitude</Label>
+                            <Input 
+                              id="lat"
+                              type="number"
+                              step="any"
+                              value={addressForm.lat || ""}
+                              onChange={(e) => setAddressForm(f => ({...f, lat: e.target.value ? parseFloat(e.target.value) : null}))}
+                              placeholder="40.7128"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="lng">Longitude</Label>
+                            <Input 
+                              id="lng"
+                              type="number"
+                              step="any"
+                              value={addressForm.lng || ""}
+                              onChange={(e) => setAddressForm(f => ({...f, lng: e.target.value ? parseFloat(e.target.value) : null}))}
+                              placeholder="-74.0060"
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (!("geolocation" in navigator)) {
+                              toast({ description: "Geolocation not supported", variant: "destructive" });
+                              return;
+                            }
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                setAddressForm(f => ({
+                                  ...f, 
+                                  lat: pos.coords.latitude, 
+                                  lng: pos.coords.longitude
+                                }));
+                                toast({ description: "Location detected!" });
+                              },
+                              () => toast({ description: "Location access denied", variant: "destructive" }),
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
+                        >
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Use My Current Location
+                        </Button>
                       </div>
                       <div className="flex gap-2">
                         <Button onClick={handleSaveAddress}>Save Profile</Button>

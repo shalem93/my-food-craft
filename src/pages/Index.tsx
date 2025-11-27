@@ -3,13 +3,12 @@ import HeaderNav from "@/components/site/HeaderNav";
 import Hero from "@/components/site/Hero";
 import ChefCard from "@/components/site/ChefCard";
 import CartSheet from "@/components/site/CartSheet";
-import { chefs } from "@/data/chefs";
+import { useChefs } from "@/hooks/useChefs";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 function haversine(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const toRad = (x: number) => (x * Math.PI) / 180;
@@ -30,6 +29,7 @@ const Index = () => {
   const [geoDenied, setGeoDenied] = useState(false);
 
   const { user, loading, userRole } = useAuth();
+  const { chefs, loading: chefsLoading } = useChefs();
 
   // Check for active order and redirect to tracking page
   useEffect(() => {
@@ -108,25 +108,34 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sorted.map((c: any) => (
-              <ChefCard
-                key={c.id}
-                slug={c.slug}
-                name={c.name}
-                rating={c.rating}
-                tasteRating={c.tasteRating}
-                looksRating={c.looksRating}
-                priceLevel={c.priceLevel}
-                deliveryEta={c.deliveryEta}
-                tags={c.tags}
-                image={c.image}
-              />
-            ))}
-            {coords && sorted.length === 0 && (
-              <p className="text-sm text-muted-foreground">No chefs within {radius} km of your location.</p>
+            {chefsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading chefs...</p>
+            ) : sorted.length === 0 ? (
+              <div className="col-span-full">
+                {coords ? (
+                  <p className="text-sm text-muted-foreground">No chefs within {radius} km of your location.</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No online chefs available at the moment.</p>
+                )}
+              </div>
+            ) : (
+              sorted.map((c: any) => (
+                <ChefCard
+                  key={c.id}
+                  slug={c.user_id}
+                  name={c.display_name}
+                  rating={c.rating}
+                  tasteRating={c.tasteRating}
+                  looksRating={c.looksRating}
+                  priceLevel={c.priceLevel}
+                  deliveryEta={c.deliveryEta}
+                  tags={c.tags}
+                  image={c.image}
+                />
+              ))
             )}
             {geoDenied && !coords && (
-              <p className="text-sm text-muted-foreground">Location access denied. You can still browse all chefs.</p>
+              <p className="text-sm text-muted-foreground col-span-full">Location access denied. Showing all available chefs.</p>
             )}
           </div>
         </section>
