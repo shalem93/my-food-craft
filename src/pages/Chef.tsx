@@ -40,7 +40,7 @@ const ChefPage = () => {
       if (!slug) return;
       
       const { data: profile } = await supabase
-        .from("public_chef_info")
+        .from("chef_profiles")
         .select("*")
         .eq("user_id", slug)
         .single();
@@ -78,8 +78,8 @@ const ChefPage = () => {
         rating: ratings?.avg_overall || 4.5,
         deliveryEta: "30-45 min",
         tags,
-        image: "/placeholder.svg",
-        banner: "/placeholder.svg",
+        image: profile.profile_image_url || "/placeholder.svg",
+        banner: profile.banner_image_url || "/placeholder.svg",
         menu: (menuItems || []).map(item => ({
           id: item.id,
           name: item.name,

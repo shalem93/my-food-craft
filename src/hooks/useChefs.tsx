@@ -26,6 +26,7 @@ export type Chef = {
   deliveryEta: string;
   tags: string[];
   image: string;
+  banner?: string;
   menu: MenuItem[];
 };
 
@@ -104,7 +105,8 @@ export function useChefs() {
           priceLevel: chefRating?.avg_price ? Math.round(chefRating.avg_price) : 2,
           deliveryEta: "30-45 min",
           tags,
-          image: "/placeholder.svg", // You can add profile images later
+          image: (profile as any).profile_image_url || "/placeholder.svg",
+          banner: (profile as any).banner_image_url || "/placeholder.svg",
           menu: chefMenuItems.map((item) => ({
             id: item.id,
             name: item.name,

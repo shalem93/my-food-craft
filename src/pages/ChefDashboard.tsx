@@ -70,8 +70,15 @@ const ChefDashboard = () => {
     display_name: "",
     bio: "",
     lat: null as number | null,
-    lng: null as number | null
+    lng: null as number | null,
+    profile_image_url: "",
+    banner_image_url: ""
   });
+
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const [uploadingBannerImage, setUploadingBannerImage] = useState(false);
 
   // Handle URL hash to set active tab
   useEffect(() => {
@@ -173,7 +180,9 @@ const ChefDashboard = () => {
         display_name: profile.display_name || "",
         bio: profile.bio || "",
         lat: profile.lat,
-        lng: profile.lng
+        lng: profile.lng,
+        profile_image_url: profile.profile_image_url || "",
+        banner_image_url: profile.banner_image_url || ""
       });
         setIsOnline(profile.is_online || false);
         setSchedule(profile.schedule || schedule);
@@ -364,6 +373,44 @@ const ChefDashboard = () => {
       return;
     }
 
+    // Upload profile image if selected
+    let profile_image_url = addressForm.profile_image_url;
+    if (profileImageFile) {
+      const fileExt = profileImageFile.name.split('.').pop();
+      const fileName = `${uid}/profile-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('chef-profiles')
+        .upload(fileName, profileImageFile, { upsert: true });
+      
+      if (uploadError) {
+        toast({ description: `Error uploading profile image: ${uploadError.message}`, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage.from('chef-profiles').getPublicUrl(fileName);
+      profile_image_url = publicUrl;
+    }
+
+    // Upload banner image if selected
+    let banner_image_url = addressForm.banner_image_url;
+    if (bannerImageFile) {
+      const fileExt = bannerImageFile.name.split('.').pop();
+      const fileName = `${uid}/banner-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('chef-profiles')
+        .upload(fileName, bannerImageFile, { upsert: true });
+      
+      if (uploadError) {
+        toast({ description: `Error uploading banner image: ${uploadError.message}`, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage.from('chef-profiles').getPublicUrl(fileName);
+      banner_image_url = publicUrl;
+    }
+
     const profileData = {
       user_id: uid,
       pickup_address: addressForm.pickup_address,
@@ -374,7 +421,9 @@ const ChefDashboard = () => {
       display_name: addressForm.display_name,
       bio: addressForm.bio,
       lat,
-      lng
+      lng,
+      profile_image_url,
+      banner_image_url
     };
 
     let error;
@@ -788,6 +837,59 @@ const ChefDashboard = () => {
                           placeholder="Passionate about authentic Italian cuisine..."
                         />
                       </div>
+                      
+                      <div className="grid gap-4 border-t pt-4">
+                        <h4 className="font-medium text-sm">Profile Images</h4>
+                        
+                        <div className="grid gap-2">
+                          <Label htmlFor="profile_image">Profile Photo</Label>
+                          <div className="flex items-center gap-4">
+                            {(addressForm.profile_image_url || profileImageFile) && (
+                              <img 
+                                src={profileImageFile ? URL.createObjectURL(profileImageFile) : addressForm.profile_image_url} 
+                                alt="Profile preview" 
+                                className="h-16 w-16 rounded-md object-cover border"
+                              />
+                            )}
+                            <Input 
+                              id="profile_image"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setProfileImageFile(file);
+                              }}
+                              className="max-w-xs"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Recommended: Square image, at least 400x400px</p>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="banner_image">Banner Image</Label>
+                          <div className="flex items-start gap-4">
+                            {(addressForm.banner_image_url || bannerImageFile) && (
+                              <img 
+                                src={bannerImageFile ? URL.createObjectURL(bannerImageFile) : addressForm.banner_image_url} 
+                                alt="Banner preview" 
+                                className="h-24 w-40 rounded-md object-cover border"
+                              />
+                            )}
+                            <Input 
+                              id="banner_image"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setBannerImageFile(file);
+                              }}
+                              className="max-w-xs"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Recommended: Wide image, at least 1200x400px</p>
+                        </div>
+                      </div>
+
                       <p className="text-sm text-muted-foreground flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
                         Your location coordinates will be automatically determined from your address
