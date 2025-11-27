@@ -76,6 +76,8 @@ const ChefDashboard = () => {
     const hash = location.hash.replace('#', '');
     if (hash === 'menu' || hash === 'orders') {
       setActiveTab(hash);
+    } else {
+      setActiveTab('overview');
     }
   }, [location.hash]);
 
