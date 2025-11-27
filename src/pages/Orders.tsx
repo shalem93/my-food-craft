@@ -27,6 +27,7 @@ interface Order {
   created_at: string;
   chef_user_id: string;
   delivery_tracking_url?: string;
+  delivery_fee_cents?: number | null;
   public_chef_info?: {
     display_name: string;
   } | null;
@@ -227,7 +228,9 @@ const Orders = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">${(order.amount / 100).toFixed(2)}</p>
+                            <p className="font-semibold">
+                              ${((order.amount + (order.delivery_fee_cents || 0)) / 100).toFixed(2)}
+                            </p>
                             <Badge variant={getStatusBadgeVariant(order.delivery_status)}>
                               {order.delivery_status || 'Preparing'}
                             </Badge>
@@ -281,7 +284,9 @@ const Orders = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">${(order.amount / 100).toFixed(2)}</p>
+                            <p className="font-semibold">
+                              ${((order.amount + (order.delivery_fee_cents || 0)) / 100).toFixed(2)}
+                            </p>
                             <Badge variant="default">Delivered</Badge>
                           </div>
                         </div>
