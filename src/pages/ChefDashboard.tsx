@@ -8,14 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Clock, Package, MapPin } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
+import { format } from "date-fns";
 
 // Local types to avoid depending on generated Supabase types
 interface MenuItemRow {
@@ -104,6 +106,8 @@ const ChefDashboard = () => {
     currency: string;
   } | null>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [liveOrders, setLiveOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const { toast } = useToast();
 
@@ -202,6 +206,63 @@ const ChefDashboard = () => {
         setRecentOrders(data.recentOrders || []);
       }
       setAnalyticsLoading(false);
+    })();
+  }, []);
+
+  // Load live orders for the chef
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return;
+
+      setOrdersLoading(true);
+      
+      // Fetch orders for this chef
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items(*)
+        `)
+        .eq('chef_user_id', uid)
+        .in('delivery_status', ['created', 'confirmed', 'pickup', 'pickup_complete', 'dropoff', 'in_progress'])
+        .order('created_at', { ascending: false });
+
+      if (!error && orders) {
+        setLiveOrders(orders);
+      }
+      setOrdersLoading(false);
+
+      // Subscribe to real-time updates
+      const channel = supabase
+        .channel('chef-orders-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `chef_user_id=eq.${uid}`
+          },
+          (payload) => {
+            console.log('Order update:', payload);
+            if (payload.eventType === 'INSERT') {
+              setLiveOrders(prev => [payload.new as any, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              setLiveOrders(prev => prev.map(order => 
+                order.id === payload.new.id ? { ...order, ...payload.new } : order
+              ));
+            } else if (payload.eventType === 'DELETE') {
+              setLiveOrders(prev => prev.filter(order => order.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     })();
   }, []);
 
@@ -430,8 +491,15 @@ const ChefDashboard = () => {
           </p>
 
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="orders">
+                Orders {liveOrders.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-xs font-medium">
+                    {liveOrders.length}
+                  </span>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="menu">Menu</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="how-it-works">How it works</TabsTrigger>
@@ -746,6 +814,116 @@ const ChefDashboard = () => {
                     </Table>
                   </div>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="orders">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Live Orders</CardTitle>
+                    <CardDescription>Orders that need your attention</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {ordersLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="ml-2">Loading orders...</span>
+                      </div>
+                    ) : liveOrders.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="font-medium">No active orders</p>
+                        <p className="text-sm">New orders will appear here in real-time</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {liveOrders.map((order) => (
+                          <Card key={order.id} className="border-2">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <CardTitle className="text-lg">
+                                    Order #{order.id.slice(0, 8)}
+                                  </CardTitle>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    {format(new Date(order.created_at), 'PPp')}
+                                  </div>
+                                </div>
+                                <Badge variant={
+                                  order.delivery_status === 'created' ? 'secondary' :
+                                  order.delivery_status === 'confirmed' ? 'default' :
+                                  'outline'
+                                }>
+                                  {order.delivery_status || 'New'}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {/* Order Items */}
+                              {order.order_items && order.order_items.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-sm font-medium">Items:</p>
+                                  <ul className="space-y-1">
+                                    {order.order_items.map((item: any) => (
+                                      <li key={item.id} className="flex justify-between text-sm">
+                                        <span>{item.item_name} × {item.quantity}</span>
+                                        <span className="text-muted-foreground">
+                                          ${((item.price_cents * item.quantity) / 100).toFixed(2)}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <div className="pt-2 border-t flex justify-between font-medium">
+                                    <span>Total</span>
+                                    <span>${(order.amount / 100).toFixed(2)}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Delivery Information */}
+                              <div className="space-y-2 rounded-lg bg-muted/50 p-3">
+                                <div className="flex items-start gap-2">
+                                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">Delivery Address</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {order.dropoff_address || 'Not specified'}
+                                    </p>
+                                    {order.dropoff_business_name && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {order.dropoff_business_name}
+                                      </p>
+                                    )}
+                                    {order.dropoff_phone && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {order.dropoff_phone}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Tracking Link */}
+                              {order.delivery_tracking_url && (
+                                <Button asChild variant="outline" className="w-full">
+                                  <a 
+                                    href={order.delivery_tracking_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                  >
+                                    Track Delivery →
+                                  </a>
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
