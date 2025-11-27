@@ -158,9 +158,10 @@ const Orders = () => {
     }
   };
 
-  // Current orders: orders that are not delivered (including newly created with null status)
+  // Current orders: orders that are not delivered and not stuck in payment (excluding abandoned checkouts)
   const currentOrders = orders.filter(order => 
-    !order.delivery_status || (order.delivery_status && order.delivery_status !== 'delivered')
+    order.status !== 'requires_payment_method' &&
+    (!order.delivery_status || (order.delivery_status && order.delivery_status !== 'delivered'))
   );
   
   // Past orders: only delivered orders
