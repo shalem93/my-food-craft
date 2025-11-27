@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chef_profiles: {
         Row: {
+          banner_image_url: string | null
           bio: string | null
           city: string | null
           created_at: string
@@ -28,6 +29,7 @@ export type Database = {
           pickup_address: string | null
           pickup_business_name: string | null
           pickup_phone: string | null
+          profile_image_url: string | null
           schedule: Json | null
           stripe_account_id: string | null
           updated_at: string
@@ -35,6 +37,7 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          banner_image_url?: string | null
           bio?: string | null
           city?: string | null
           created_at?: string
@@ -47,6 +50,7 @@ export type Database = {
           pickup_address?: string | null
           pickup_business_name?: string | null
           pickup_phone?: string | null
+          profile_image_url?: string | null
           schedule?: Json | null
           stripe_account_id?: string | null
           updated_at?: string
@@ -54,6 +58,7 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          banner_image_url?: string | null
           bio?: string | null
           city?: string | null
           created_at?: string
@@ -66,6 +71,7 @@ export type Database = {
           pickup_address?: string | null
           pickup_business_name?: string | null
           pickup_phone?: string | null
+          profile_image_url?: string | null
           schedule?: Json | null
           stripe_account_id?: string | null
           updated_at?: string
