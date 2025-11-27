@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
 import MenuItemDialog from "./MenuItemDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   chefSlug: string;
@@ -15,7 +16,16 @@ interface Props {
 
 const MenuItemCard = ({ chefSlug, id, name, description, price, image }: Props) => {
   const { add } = useCart();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
+
+  const handleAdd = () => {
+    add({ id, name, price, image, chefSlug });
+    toast({
+      title: "Added to cart",
+      description: `${name} has been added to cart`,
+    });
+  };
   return (
     <Card className="overflow-hidden">
       <button className="relative aspect-[16/10] overflow-hidden w-full" onClick={() => setOpen(true)} aria-label={`Customize ${name}`}>
@@ -30,7 +40,7 @@ const MenuItemCard = ({ chefSlug, id, name, description, price, image }: Props) 
           </div>
           <div className="flex flex-col gap-2">
             <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>Customize</Button>
-            <Button size="sm" onClick={() => add({ id, name, price, image, chefSlug })}>Add</Button>
+            <Button size="sm" onClick={handleAdd}>Add</Button>
           </div>
         </div>
       </CardContent>
