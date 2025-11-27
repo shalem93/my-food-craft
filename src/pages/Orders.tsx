@@ -28,6 +28,7 @@ interface Order {
   chef_user_id: string;
   delivery_tracking_url?: string;
   delivery_fee_cents?: number | null;
+  pickup_business_name?: string | null;
   public_chef_info?: {
     display_name: string;
   } | null;
@@ -221,7 +222,7 @@ const Orders = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle className="text-lg">
-                              Order from {order.public_chef_info?.display_name || 'Chef'}
+                              Order from {order.public_chef_info?.display_name || order.pickup_business_name || 'Chef'}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(order.created_at), 'PPP')}
@@ -283,7 +284,7 @@ const Orders = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle className="text-lg">
-                              Order from {order.public_chef_info?.display_name || 'Chef'}
+                              Order from {order.public_chef_info?.display_name || order.pickup_business_name || 'Chef'}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(order.created_at), 'PPP')}
