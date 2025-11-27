@@ -10,7 +10,7 @@ const CartSheet = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button size="lg" className="fixed bottom-6 right-6 shadow-[var(--shadow-elevate)]" aria-label="Open cart">
+        <Button size="lg" className="fixed bottom-20 right-6 shadow-[var(--shadow-elevate)]" aria-label="Open cart">
           Cart ({count})
         </Button>
       </SheetTrigger>

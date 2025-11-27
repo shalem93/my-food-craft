@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/context/CartContext";
 import ReviewsSection from "./ReviewsSection";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   open: boolean;
@@ -28,6 +29,7 @@ const defaultAddOns = [
 
 export default function MenuItemDialog({ open, onOpenChange, chefSlug, id, name, description, price, image }: Props) {
   const { add } = useCart();
+  const { toast } = useToast();
   const [selected, setSelected] = useState<string[]>([]);
   const [qty, setQty] = useState(1);
   const [note, setNote] = useState("");
@@ -38,6 +40,10 @@ export default function MenuItemDialog({ open, onOpenChange, chefSlug, id, name,
 
   const addToCart = () => {
     add({ id, name, price, image, chefSlug, options: selected, note }, qty);
+    toast({
+      title: "Added to cart",
+      description: `${name} has been added to cart`,
+    });
     onOpenChange(false);
   };
 
