@@ -18,6 +18,7 @@ import { Loader2, Plus, Trash2, Clock, Package, MapPin } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 import { format } from "date-fns";
+import { useLocation } from "react-router-dom";
 
 // Local types to avoid depending on generated Supabase types
 interface MenuItemRow {
@@ -53,6 +54,8 @@ interface RatingsAgg {
 }
 
 const ChefDashboard = () => {
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<any>(null);
   const [chefProfile, setChefProfile] = useState<any>(null);
@@ -67,6 +70,14 @@ const ChefDashboard = () => {
     display_name: "",
     bio: ""
   });
+
+  // Handle URL hash to set active tab
+  useEffect(() => {
+    const hash = location.hash.replace('#', '');
+    if (hash === 'menu' || hash === 'orders') {
+      setActiveTab(hash);
+    }
+  }, [location.hash]);
 
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuItems, setMenuItems] = useState<MenuItemRow[]>([]);
@@ -490,7 +501,7 @@ const ChefDashboard = () => {
             Connect payouts, manage your dishes, and track multi-criteria reviews (taste, looks, price).
           </p>
 
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="orders">
