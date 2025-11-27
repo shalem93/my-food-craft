@@ -123,18 +123,24 @@ const Checkout = () => {
         console.error("Error loading addresses:", error);
       } else {
         setSavedAddresses(data || []);
-        // Auto-select default address
-        const defaultAddress = data?.find(addr => addr.is_default);
-        if (defaultAddress) {
-          setSelectedAddressId(defaultAddress.id);
-          setFullName(defaultAddress.full_name);
-          setPhone(defaultAddress.phone);
-          setAddress(defaultAddress.address);
-          setCity(defaultAddress.city);
-          setZip(defaultAddress.zip);
-          // Auto-request quote for default address
-          setTimeout(() => requestQuote(), 100);
-        }
+          // Auto-select default address
+          const defaultAddress = data?.find(addr => addr.is_default);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id);
+            setFullName(defaultAddress.full_name);
+            setPhone(defaultAddress.phone);
+            setAddress(defaultAddress.address);
+            setCity(defaultAddress.city);
+            setZip(defaultAddress.zip);
+            // Auto-request quote for default address with immediate values
+            requestQuote(
+              defaultAddress.phone,
+              defaultAddress.address,
+              defaultAddress.city,
+              defaultAddress.zip,
+              defaultAddress.full_name
+            );
+          }
       }
       setIsLoadingAddresses(false);
     };
@@ -188,8 +194,14 @@ const Checkout = () => {
       setAddress(selectedAddress.address);
       setCity(selectedAddress.city);
       setZip(selectedAddress.zip);
-      // Auto-request quote when address changes
-      setTimeout(() => requestQuote(), 100);
+      // Request quote immediately with the new address values
+      requestQuote(
+        selectedAddress.phone,
+        selectedAddress.address,
+        selectedAddress.city,
+        selectedAddress.zip,
+        selectedAddress.full_name
+      );
     }
   };
 
@@ -217,9 +229,21 @@ const Checkout = () => {
     }
   };
 
-  const requestQuote = async () => {
-    if (!phone || !address || !city || !zip) return;
-    const dropoff_address = `${address}, ${city} ${zip}`;
+  const requestQuote = async (
+    phoneParam?: string,
+    addressParam?: string,
+    cityParam?: string,
+    zipParam?: string,
+    fullNameParam?: string
+  ) => {
+    const phoneVal = phoneParam || phone;
+    const addressVal = addressParam || address;
+    const cityVal = cityParam || city;
+    const zipVal = zipParam || zip;
+    const fullNameVal = fullNameParam || fullName;
+
+    if (!phoneVal || !addressVal || !cityVal || !zipVal) return;
+    const dropoff_address = `${addressVal}, ${cityVal} ${zipVal}`;
     
     // Fetch chef pickup address for demo chef
     const { data: chefProfile } = await supabase
@@ -238,7 +262,7 @@ const Checkout = () => {
     const { data, error } = await supabase.functions.invoke("doordash-quote", {
       body: { 
         dropoff_address, 
-        dropoff_phone: phone,
+        dropoff_phone: phoneVal,
         pickup_address,
       },
     });
@@ -250,6 +274,7 @@ const Checkout = () => {
         title: "Delivery unavailable",
         description: errorMessage,
       });
+      setDeliveryFeeCents(null); // Clear delivery fee on error
       return;
     }
     if (data?.delivery_fee_cents) {
@@ -260,8 +285,8 @@ const Checkout = () => {
           .from("orders")
           .update({
             dropoff_address,
-            dropoff_phone: phone,
-            dropoff_business_name: fullName,
+            dropoff_phone: phoneVal,
+            dropoff_business_name: fullNameVal,
             delivery_fee_cents: data.delivery_fee_cents,
           })
           .eq("id", orderId);
@@ -348,7 +373,7 @@ const Checkout = () => {
             {/* Manual delivery estimate button (only if no auto-trigger) */}
             {deliveryFeeCents === null && (
               <div>
-                <Button variant="secondary" onClick={requestQuote} disabled={!phone || !address || !city || !zip}>
+                <Button variant="secondary" onClick={() => requestQuote()} disabled={!phone || !address || !city || !zip}>
                   Get delivery estimate
                 </Button>
               </div>
