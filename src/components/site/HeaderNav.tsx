@@ -10,8 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { User, Menu } from "lucide-react";
 
 
 const HeaderNav = () => {
@@ -53,8 +52,8 @@ const HeaderNav = () => {
           )}
         </div>
         {user ? (
-          <div className="hidden md:flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span className="hidden md:inline text-sm text-muted-foreground">
               Welcome {userRole && `(${userRole})`}
             </span>
             <DropdownMenu>
@@ -114,14 +113,23 @@ const HeaderNav = () => {
             </DropdownMenu>
           </div>
         ) : (
-          <div className="hidden md:flex items-center gap-3">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm" aria-label="Sign in">Sign in</Button>
+          <>
+            {/* Mobile sign in */}
+            <Link to="/auth" className="md:hidden">
+              <Button variant="ghost" size="icon" aria-label="Sign in">
+                <User className="h-5 w-5" />
+              </Button>
             </Link>
-            <Link to="/auth">
-              <Button size="sm" aria-label="Create account">Sign up</Button>
-            </Link>
-          </div>
+            {/* Desktop sign in */}
+            <div className="hidden md:flex items-center gap-3">
+              <Link to="/auth">
+                <Button variant="ghost" size="sm" aria-label="Sign in">Sign in</Button>
+              </Link>
+              <Link to="/auth">
+                <Button size="sm" aria-label="Create account">Sign up</Button>
+              </Link>
+            </div>
+          </>
         )}
       </nav>
     </header>
