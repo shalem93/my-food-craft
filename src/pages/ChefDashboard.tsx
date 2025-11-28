@@ -350,22 +350,21 @@ const ChefDashboard = () => {
 
     try {
       const fullAddress = `${addressForm.pickup_address}, ${addressForm.city || ''}, ${addressForm.zip || ''}`.trim();
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`
-      );
-      const data = await response.json();
+      const { data, error } = await supabase.functions.invoke('geocode', {
+        body: { address: fullAddress }
+      });
       
-      if (data && data.length > 0) {
-        lat = parseFloat(data[0].lat);
-        lng = parseFloat(data[0].lon);
-      } else {
+      if (error || data?.error) {
         toast({ 
-          description: "Could not find coordinates for this address. Please check the address.", 
+          description: data?.error || "Could not find coordinates for this address. Please check the address.", 
           variant: "destructive" 
         });
         setLoading(false);
         return;
       }
+      
+      lat = data.lat;
+      lng = data.lng;
     } catch (error) {
       console.error("Geocoding error:", error);
       toast({ description: "Error looking up address coordinates.", variant: "destructive" });
