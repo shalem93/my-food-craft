@@ -294,7 +294,7 @@ const Checkout = () => {
       if (error) {
         // Use console.log instead of console.error to avoid triggering error handlers
         console.log("Delivery quote error (expected for distant addresses):", data?.message || error.message);
-        const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
+        const errorMessage = data?.message || "Could not get delivery quote, address is too far from pickup location.";
         setDeliveryError(errorMessage);
         setDeliveryFeeCents(null);
         return;
@@ -320,7 +320,7 @@ const Checkout = () => {
     } catch (err) {
       // Silently handle any unexpected errors - just show inline message
       console.log("Delivery quote request failed:", err);
-      setDeliveryError("Could not get delivery quote. Please try again.");
+      setDeliveryError("Could not get delivery quote, address is too far from pickup location.");
       setDeliveryFeeCents(null);
     }
   };
