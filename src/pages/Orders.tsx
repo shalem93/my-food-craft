@@ -10,7 +10,8 @@ import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ReviewDialog from "@/components/site/ReviewDialog";
-import { Star } from "lucide-react";
+import ItemReviewDialog from "@/components/site/ItemReviewDialog";
+import { Star, MessageSquare } from "lucide-react";
 
 interface OrderItem {
   id: string;
@@ -41,6 +42,8 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [itemReviewDialogOpen, setItemReviewDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{ orderId: string; itemId: string; itemName: string } | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -303,11 +306,29 @@ const Orders = () => {
                         {order.order_items && order.order_items.length > 0 && (
                           <div className="space-y-2">
                             <p className="text-sm font-medium">Items:</p>
-                            <ul className="space-y-1">
+                            <ul className="space-y-2">
                               {order.order_items.map((item) => (
-                                <li key={item.id} className="flex justify-between text-sm text-muted-foreground">
-                                  <span>{item.item_name} × {item.quantity}</span>
-                                  <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
+                                <li key={item.id} className="flex justify-between items-center text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">{item.item_name} × {item.quantity}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => {
+                                        setSelectedItem({
+                                          orderId: order.id,
+                                          itemId: item.id,
+                                          itemName: item.item_name
+                                        });
+                                        setItemReviewDialogOpen(true);
+                                      }}
+                                    >
+                                      <MessageSquare className="h-3 w-3 mr-1" />
+                                      Review
+                                    </Button>
+                                  </div>
+                                  <span className="text-muted-foreground">${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
                                 </li>
                               ))}
                               {order.delivery_fee_cents && (
@@ -329,7 +350,7 @@ const Orders = () => {
                           className="w-full"
                         >
                           <Star className="h-4 w-4 mr-2" />
-                          Write a Review
+                          Review Chef
                         </Button>
                       </CardContent>
                     </Card>
@@ -348,6 +369,16 @@ const Orders = () => {
           orderId={selectedOrder.id}
           chefUserId={selectedOrder.chef_user_id}
           chefName={selectedOrder.public_chef_info?.display_name}
+        />
+      )}
+
+      {selectedItem && (
+        <ItemReviewDialog
+          open={itemReviewDialogOpen}
+          onOpenChange={setItemReviewDialogOpen}
+          orderId={selectedItem.orderId}
+          itemId={selectedItem.itemId}
+          itemName={selectedItem.itemName}
         />
       )}
     </div>
