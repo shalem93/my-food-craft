@@ -24,10 +24,11 @@ const PaymentForm = ({
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
 
   const handlePay = async () => {
-    if (!stripe || !elements) {
-      console.log("Stripe or elements not ready");
+    if (!stripe || !elements || !paymentElementReady) {
+      console.log("Stripe, elements, or PaymentElement not ready");
       return;
     }
     
@@ -79,8 +80,22 @@ const PaymentForm = ({
 
   return (
     <div className="space-y-4">
-      <PaymentElement options={{ layout: "tabs" }} />
-      <Button className="mt-2" disabled={!stripe || submitting} onClick={handlePay}>
+      {!paymentElementReady && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-sm text-muted-foreground">Loading payment form...</span>
+        </div>
+      )}
+      <PaymentElement 
+        options={{ layout: "tabs" }} 
+        onReady={() => setPaymentElementReady(true)}
+        onLoadError={(error) => console.error("PaymentElement load error:", error)}
+      />
+      <Button 
+        className="mt-2" 
+        disabled={!stripe || !paymentElementReady || submitting} 
+        onClick={handlePay}
+      >
         {submitting ? "Processing..." : "Place order"}
       </Button>
     </div>
