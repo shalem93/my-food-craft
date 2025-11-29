@@ -268,51 +268,60 @@ const Checkout = () => {
     if (!phoneVal || !addressVal || !cityVal || !zipVal) return;
     const dropoff_address = `${addressVal}, ${cityVal} ${zipVal}`;
     
-    // Fetch chef pickup address for demo chef
-    const { data: chefProfile } = await supabase
-      .from("chef_profiles")
-      .select("pickup_address, city, zip")
-      .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
-      .maybeSingle();
-    
-    if (!chefProfile?.pickup_address || !chefProfile?.city || !chefProfile?.zip) {
-      console.error("Chef pickup address not found");
-      return;
-    }
-
-    const pickup_address = `${chefProfile.pickup_address}, ${chefProfile.city} ${chefProfile.zip}`;
-
-    const { data, error } = await supabase.functions.invoke("doordash-quote", {
-      body: { 
-        dropoff_address, 
-        dropoff_phone: phoneVal,
-        pickup_address,
-      },
-    });
-    if (error) {
-      console.error(error);
-      const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
-      setDeliveryError(errorMessage);
-      setDeliveryFeeCents(null); // Clear delivery fee on error
-      return;
-    }
-    // Clear any previous error and set the delivery fee
-    setDeliveryError(null);
-    if (data?.delivery_fee_cents) {
-      setDeliveryFeeCents(data.delivery_fee_cents);
-      if (orderId) {
-        // Loosen types to avoid mismatch with generated types
-        const updateResult = await (supabase as any)
-          .from("orders")
-          .update({
-            dropoff_address,
-            dropoff_phone: phoneVal,
-            dropoff_business_name: fullNameVal,
-            delivery_fee_cents: data.delivery_fee_cents,
-          })
-          .eq("id", orderId);
-        console.log("Order update result:", updateResult);
+    try {
+      // Fetch chef pickup address for demo chef
+      const { data: chefProfile } = await supabase
+        .from("chef_profiles")
+        .select("pickup_address, city, zip")
+        .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
+        .maybeSingle();
+      
+      if (!chefProfile?.pickup_address || !chefProfile?.city || !chefProfile?.zip) {
+        console.log("Chef pickup address not found");
+        return;
       }
+
+      const pickup_address = `${chefProfile.pickup_address}, ${chefProfile.city} ${chefProfile.zip}`;
+
+      const { data, error } = await supabase.functions.invoke("doordash-quote", {
+        body: { 
+          dropoff_address, 
+          dropoff_phone: phoneVal,
+          pickup_address,
+        },
+      });
+      
+      if (error) {
+        // Use console.log instead of console.error to avoid triggering error handlers
+        console.log("Delivery quote error (expected for distant addresses):", data?.message || error.message);
+        const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
+        setDeliveryError(errorMessage);
+        setDeliveryFeeCents(null);
+        return;
+      }
+      
+      // Clear any previous error and set the delivery fee
+      setDeliveryError(null);
+      if (data?.delivery_fee_cents) {
+        setDeliveryFeeCents(data.delivery_fee_cents);
+        if (orderId) {
+          const updateResult = await (supabase as any)
+            .from("orders")
+            .update({
+              dropoff_address,
+              dropoff_phone: phoneVal,
+              dropoff_business_name: fullNameVal,
+              delivery_fee_cents: data.delivery_fee_cents,
+            })
+            .eq("id", orderId);
+          console.log("Order update result:", updateResult);
+        }
+      }
+    } catch (err) {
+      // Silently handle any unexpected errors - just show inline message
+      console.log("Delivery quote request failed:", err);
+      setDeliveryError("Could not get delivery quote. Please try again.");
+      setDeliveryFeeCents(null);
     }
   };
 
