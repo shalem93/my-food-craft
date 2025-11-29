@@ -103,6 +103,7 @@ const Checkout = () => {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [deliveryFeeCents, setDeliveryFeeCents] = useState<number | null>(null);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -291,14 +292,12 @@ const Checkout = () => {
     if (error) {
       console.error(error);
       const errorMessage = data?.message || "Could not get delivery quote. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Delivery unavailable",
-        description: errorMessage,
-      });
+      setDeliveryError(errorMessage);
       setDeliveryFeeCents(null); // Clear delivery fee on error
       return;
     }
+    // Clear any previous error and set the delivery fee
+    setDeliveryError(null);
     if (data?.delivery_fee_cents) {
       setDeliveryFeeCents(data.delivery_fee_cents);
       if (orderId) {
@@ -348,24 +347,31 @@ const Checkout = () => {
               <div className="space-y-2">
                 <Label>Delivery Address</Label>
                 {savedAddresses.length > 0 ? (
-                  <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a saved address" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {savedAddresses.map((addr) => (
-                        <SelectItem key={addr.id} value={addr.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{addr.label}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {addr.address}, {addr.city} {addr.zip}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new">+ Add new address</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <>
+                    <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a saved address" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {savedAddresses.map((addr) => (
+                          <SelectItem key={addr.id} value={addr.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{addr.label}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {addr.address}, {addr.city} {addr.zip}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="new">+ Add new address</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {deliveryError && (
+                      <p className="text-sm text-destructive mt-1">
+                        {deliveryError}
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground">No saved addresses. Fill out the form below to create one.</p>
                 )}
