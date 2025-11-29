@@ -94,6 +94,7 @@ const Checkout = () => {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [chefInfo, setChefInfo] = useState<{ name: string; city: string; zip: string } | null>(null);
 
   // Delivery form state
   const [fullName, setFullName] = useState("");
@@ -106,6 +107,27 @@ const Checkout = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const amountCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
+
+  // Load chef info for display
+  useEffect(() => {
+    const loadChefInfo = async () => {
+      // For now using the demo chef ID - in future this would come from cart items
+      const { data } = await supabase
+        .from("chef_profiles")
+        .select("display_name, city, zip")
+        .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
+        .maybeSingle();
+      
+      if (data) {
+        setChefInfo({
+          name: data.display_name || "Chef",
+          city: data.city || "",
+          zip: data.zip || ""
+        });
+      }
+    };
+    loadChefInfo();
+  }, []);
 
   // Load saved addresses for authenticated users
   useEffect(() => {
@@ -305,6 +327,19 @@ const Checkout = () => {
       <HeaderNav />
       <main className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <section className="lg:col-span-2 space-y-6">
+          {/* Chef / Pickup Location Info */}
+          {chefInfo && (
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">Ordering from</p>
+              <p className="font-semibold text-lg">{chefInfo.name}</p>
+              {(chefInfo.city || chefInfo.zip) && (
+                <p className="text-sm text-muted-foreground">
+                  Pickup area: {[chefInfo.city, chefInfo.zip].filter(Boolean).join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-4">
             <h1 className="text-2xl font-bold">Delivery details</h1>
             
