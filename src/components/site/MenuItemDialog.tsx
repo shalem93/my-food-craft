@@ -97,9 +97,9 @@ export default function MenuItemDialog({ open, onOpenChange, chefSlug, id, name,
           </div>
         </div>
 
-        {/* Reviews for this dish */}
+        {/* Reviews for this dish (read-only) */}
         <div className="p-5">
-          <ReviewsSection chefSlug={chefSlug} itemId={id} title="Reviews for this dish" />
+          <ReviewsSection chefSlug={chefSlug} itemId={id} title="Reviews for this dish" showForm={false} />
         </div>
       </DialogContent>
     </Dialog>
