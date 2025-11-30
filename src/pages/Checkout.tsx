@@ -122,7 +122,11 @@ const Checkout = () => {
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
-  const amountCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
+  
+  // Fee calculations
+  const SERVICE_FEE_CENTS = 299; // $2.99 flat service fee
+  const foodSubtotalCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
+  const totalCents = useMemo(() => foodSubtotalCents + SERVICE_FEE_CENTS + (deliveryFeeCents ?? 0), [foodSubtotalCents, deliveryFeeCents]);
 
   // Load chef info for display
   useEffect(() => {
@@ -198,7 +202,9 @@ const Checkout = () => {
 
       const { data, error } = await supabase.functions.invoke("create-payment-intent", {
         body: { 
-          amount: amountCents, 
+          amount: foodSubtotalCents, 
+          service_fee_cents: SERVICE_FEE_CENTS,
+          delivery_fee_cents: deliveryFeeCents,
           currency: "usd",
           chef_user_id: "89a542ee-b062-46c5-b3be-631e8cdcd939", // Demo chef with pickup address
           items: items.map(item => {
@@ -221,7 +227,7 @@ const Checkout = () => {
       if (data.order_id) setOrderId(data.order_id);
     };
     setup();
-  }, [amountCents, items.length]);
+  }, [foodSubtotalCents, items.length, deliveryFeeCents]);
 
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId);
@@ -477,7 +483,11 @@ const Checkout = () => {
             <Separator className="my-3" />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
-              <span className="font-semibold">${(amountCents / 100).toFixed(2)}</span>
+              <span className="font-semibold">${(foodSubtotalCents / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-muted-foreground">Service fee</span>
+              <span className="font-semibold">${(SERVICE_FEE_CENTS / 100).toFixed(2)}</span>
             </div>
             {deliveryFeeCents !== null && (
               <div className="flex items-center justify-between mt-2">
@@ -488,7 +498,7 @@ const Checkout = () => {
             <Separator className="my-3" />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total</span>
-              <span className="font-semibold">${(((amountCents + (deliveryFeeCents ?? 0)) / 100)).toFixed(2)}</span>
+              <span className="font-semibold">${(totalCents / 100).toFixed(2)}</span>
             </div>
           </div>
         </aside>
