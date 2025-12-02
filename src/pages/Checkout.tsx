@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
@@ -109,7 +110,10 @@ const Checkout = () => {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [chefInfo, setChefInfo] = useState<{ name: string; city: string; zip: string } | null>(null);
+  const [chefInfo, setChefInfo] = useState<{ name: string; city: string; zip: string; pickupAddress: string } | null>(null);
+
+  // Delivery method state
+  const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">("delivery");
 
   // Delivery form state
   const [fullName, setFullName] = useState("");
@@ -126,7 +130,10 @@ const Checkout = () => {
   // Fee calculations
   const SERVICE_FEE_CENTS = 299; // $2.99 flat service fee
   const foodSubtotalCents = useMemo(() => Math.max(50, Math.round(total * 100)), [total]);
-  const totalCents = useMemo(() => foodSubtotalCents + SERVICE_FEE_CENTS + (deliveryFeeCents ?? 0), [foodSubtotalCents, deliveryFeeCents]);
+  const totalCents = useMemo(() => {
+    const deliveryFee = deliveryMethod === "pickup" ? 0 : (deliveryFeeCents ?? 0);
+    return foodSubtotalCents + SERVICE_FEE_CENTS + deliveryFee;
+  }, [foodSubtotalCents, deliveryFeeCents, deliveryMethod]);
 
   // Load chef info for display
   useEffect(() => {
@@ -134,7 +141,7 @@ const Checkout = () => {
       // For now using the demo chef ID - in future this would come from cart items
       const { data } = await supabase
         .from("chef_profiles")
-        .select("display_name, city, zip")
+        .select("display_name, city, zip, pickup_address")
         .eq("user_id", "89a542ee-b062-46c5-b3be-631e8cdcd939")
         .maybeSingle();
       
@@ -142,7 +149,8 @@ const Checkout = () => {
         setChefInfo({
           name: data.display_name || "Chef",
           city: data.city || "",
-          zip: data.zip || ""
+          zip: data.zip || "",
+          pickupAddress: data.pickup_address || ""
         });
       }
     };
@@ -200,11 +208,13 @@ const Checkout = () => {
       }
       setStripePromise(loadStripe(pkRes.publishableKey));
 
+      const actualDeliveryFee = deliveryMethod === "pickup" ? 0 : deliveryFeeCents;
+
       const { data, error } = await supabase.functions.invoke("create-payment-intent", {
         body: { 
           amount: foodSubtotalCents, 
           service_fee_cents: SERVICE_FEE_CENTS,
-          delivery_fee_cents: deliveryFeeCents,
+          delivery_fee_cents: actualDeliveryFee,
           currency: "usd",
           chef_user_id: "89a542ee-b062-46c5-b3be-631e8cdcd939", // Demo chef with pickup address
           items: items.map(item => {
@@ -227,7 +237,7 @@ const Checkout = () => {
       if (data.order_id) setOrderId(data.order_id);
     };
     setup();
-  }, [foodSubtotalCents, items.length, deliveryFeeCents]);
+  }, [foodSubtotalCents, items.length, deliveryFeeCents, deliveryMethod]);
 
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId);
@@ -361,16 +371,68 @@ const Checkout = () => {
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Ordering from</p>
               <p className="font-semibold text-lg">{chefInfo.name}</p>
-              {(chefInfo.city || chefInfo.zip) && (
-                <p className="text-sm text-muted-foreground">
-                  Pickup area: {[chefInfo.city, chefInfo.zip].filter(Boolean).join(", ")}
+              {chefInfo.pickupAddress && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {chefInfo.pickupAddress}, {[chefInfo.city, chefInfo.zip].filter(Boolean).join(", ")}
                 </p>
               )}
             </div>
           )}
 
           <div className="space-y-4">
-            <h1 className="text-2xl font-bold">Delivery details</h1>
+            <h1 className="text-2xl font-bold">Order details</h1>
+            
+            {/* Delivery Method Selection */}
+            <div className="space-y-3">
+              <Label>Fulfillment method</Label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMethod("delivery")}
+                  className={`flex-1 p-4 rounded-lg border-2 transition-colors ${
+                    deliveryMethod === "delivery"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold">Delivery</div>
+                  <div className="text-sm text-muted-foreground">Get it delivered to your door</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeliveryMethod("pickup");
+                    setDeliveryFeeCents(0);
+                    setDeliveryError(null);
+                  }}
+                  className={`flex-1 p-4 rounded-lg border-2 transition-colors ${
+                    deliveryMethod === "pickup"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold">Pickup</div>
+                  <div className="text-sm text-muted-foreground">Pick up from chef</div>
+                </button>
+              </div>
+            </div>
+
+            {deliveryMethod === "pickup" && chefInfo && (
+              <div className="rounded-lg border bg-card p-4">
+                <p className="font-semibold mb-2">Pickup location</p>
+                <p className="text-sm">
+                  {chefInfo.pickupAddress || "Address not available"}
+                  {chefInfo.pickupAddress && <br />}
+                  {[chefInfo.city, chefInfo.zip].filter(Boolean).join(", ")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  You'll receive pickup instructions after payment
+                </p>
+              </div>
+            )}
+
+            {deliveryMethod === "delivery" && (
+              <>
             
             {/* Saved Addresses Dropdown for Logged In Users */}
             {user && !isLoadingAddresses && (
@@ -449,6 +511,8 @@ const Checkout = () => {
                 </Button>
               </div>
             )}
+            </>
+            )}
           </div>
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Payment</h2>
@@ -489,10 +553,16 @@ const Checkout = () => {
               <span className="text-sm text-muted-foreground">Service fee</span>
               <span className="font-semibold">${(SERVICE_FEE_CENTS / 100).toFixed(2)}</span>
             </div>
-            {deliveryFeeCents !== null && (
+            {deliveryMethod === "delivery" && deliveryFeeCents !== null && (
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm text-muted-foreground">Delivery</span>
                 <span className="font-semibold">${(deliveryFeeCents / 100).toFixed(2)}</span>
+              </div>
+            )}
+            {deliveryMethod === "pickup" && (
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-muted-foreground">Delivery</span>
+                <span className="font-semibold text-green-600">Free (Pickup)</span>
               </div>
             )}
             <Separator className="my-3" />
