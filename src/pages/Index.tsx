@@ -25,7 +25,7 @@ function haversine(a: { lat: number; lng: number }, b: { lat: number; lng: numbe
 
 const Index = () => {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [radius, setRadius] = useState(15); // km
+  const [radius, setRadius] = useState(10); // miles
   const [geoDenied, setGeoDenied] = useState(false);
 
   const { user, loading, userRole } = useAuth();
@@ -47,14 +47,15 @@ const Index = () => {
 
   const sorted = useMemo(() => {
     if (!coords) return chefs;
+    const radiusKm = radius * 1.60934; // convert miles to km
     return [...chefs]
       .map((c) => ({
         ...c,
         _distance: c.lat && c.lng ? haversine(coords, { lat: c.lat, lng: c.lng }) : Infinity,
       }))
-      .filter((c) => (c as any)._distance <= radius)
+      .filter((c) => (c as any)._distance <= radiusKm)
       .sort((a: any, b: any) => a._distance - b._distance);
-  }, [coords, radius]);
+  }, [coords, radius, chefs]);
 
   const useMyLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -101,8 +102,8 @@ const Index = () => {
             <div className="flex items-center gap-4 w-full md:w-auto">
               <Button variant="secondary" onClick={useMyLocation}>Use my location</Button>
               <div className="w-full md:w-64">
-                <p className="text-xs text-muted-foreground mb-1">Radius: {radius} km</p>
-                <Slider value={[radius]} onValueChange={(v) => setRadius(v[0])} min={5} max={50} step={1} />
+                <p className="text-xs text-muted-foreground mb-1">Radius: {radius} mi</p>
+                <Slider value={[radius]} onValueChange={(v) => setRadius(v[0])} min={5} max={30} step={1} />
               </div>
             </div>
           </div>
@@ -113,7 +114,7 @@ const Index = () => {
             ) : sorted.length === 0 ? (
               <div className="col-span-full">
                 {coords ? (
-                  <p className="text-sm text-muted-foreground">No chefs within {radius} km of your location.</p>
+                  <p className="text-sm text-muted-foreground">No chefs within {radius} mi of your location.</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">No online chefs available at the moment.</p>
                 )}
