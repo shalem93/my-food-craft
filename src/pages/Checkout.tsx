@@ -122,6 +122,7 @@ const Checkout = () => {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [deliveryFeeCents, setDeliveryFeeCents] = useState<number | null>(null);
+  const [deliveryMinutes, setDeliveryMinutes] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
@@ -335,6 +336,7 @@ const Checkout = () => {
       setDeliveryError(null);
       if (data?.delivery_fee_cents) {
         setDeliveryFeeCents(data.delivery_fee_cents);
+        setDeliveryMinutes(data.estimated_minutes || null);
         if (orderId) {
           const updateResult = await (supabase as any)
             .from("orders")
@@ -555,7 +557,9 @@ const Checkout = () => {
             </div>
             {deliveryMethod === "delivery" && deliveryFeeCents !== null && (
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm text-muted-foreground">Delivery</span>
+                <span className="text-sm text-muted-foreground">
+                  Delivery{deliveryMinutes ? ` (${deliveryMinutes}-${deliveryMinutes + 10} min)` : ""}
+                </span>
                 <span className="font-semibold">${(deliveryFeeCents / 100).toFixed(2)}</span>
               </div>
             )}
