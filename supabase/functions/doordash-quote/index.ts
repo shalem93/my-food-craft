@@ -153,8 +153,20 @@ serve(async (req) => {
 
     // Extract fee from response (in cents)
     const delivery_fee_cents = quoteData.fee || 599;
+    
+    // Calculate estimated delivery time in minutes from dropoff_time_estimated
+    let estimated_minutes: number | null = null;
+    if (quoteData.dropoff_time_estimated) {
+      const dropoffTime = new Date(quoteData.dropoff_time_estimated);
+      const now = new Date();
+      estimated_minutes = Math.round((dropoffTime.getTime() - now.getTime()) / 60000);
+    }
 
-    return new Response(JSON.stringify({ delivery_fee_cents, currency: "usd" }), {
+    return new Response(JSON.stringify({ 
+      delivery_fee_cents, 
+      currency: "usd",
+      estimated_minutes 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
