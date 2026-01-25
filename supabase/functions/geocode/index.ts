@@ -23,17 +23,57 @@ serve(async (req) => {
 
     console.log('Geocoding address:', address);
 
+    // Try structured search first for better accuracy with US addresses
+    const addressParts = address.split(',').map((p: string) => p.trim());
+    let data = [];
+    
+    // Try full address first
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=us`,
       {
         headers: {
           'User-Agent': 'HomemadeEats/1.0'
         }
       }
     );
+    data = await response.json();
+    console.log('Nominatim response (full):', data);
 
-    const data = await response.json();
-    console.log('Nominatim response:', data);
+    // If no results, try with just street + city + state/zip
+    if (!data || data.length === 0) {
+      // Try a simplified version - just city and zip
+      const simplifiedAddress = addressParts.slice(1).join(', '); // Remove street number/name
+      console.log('Trying simplified address:', simplifiedAddress);
+      
+      const response2 = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedAddress)}&limit=1&countrycodes=us`,
+        {
+          headers: {
+            'User-Agent': 'HomemadeEats/1.0'
+          }
+        }
+      );
+      data = await response2.json();
+      console.log('Nominatim response (simplified):', data);
+    }
+
+    // If still no results, try zip code only for approximate location
+    if (!data || data.length === 0) {
+      const zipMatch = address.match(/\b(\d{5})\b/);
+      if (zipMatch) {
+        console.log('Trying zip code only:', zipMatch[1]);
+        const response3 = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&postalcode=${zipMatch[1]}&country=us&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'HomemadeEats/1.0'
+            }
+          }
+        );
+        data = await response3.json();
+        console.log('Nominatim response (zip):', data);
+      }
+    }
 
     if (data && data.length > 0) {
       return new Response(
@@ -46,7 +86,7 @@ serve(async (req) => {
       );
     } else {
       return new Response(
-        JSON.stringify({ error: 'Address not found' }),
+        JSON.stringify({ error: 'Address not found. Try adding state (e.g., FL) or check spelling.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
