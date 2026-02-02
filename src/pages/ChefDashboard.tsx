@@ -311,8 +311,13 @@ const ChefDashboard = () => {
       }
       
       if (data?.url) {
-        console.log("Redirecting to:", data.url);
-        window.location.href = data.url;
+        console.log("Opening Stripe onboarding in new tab:", data.url);
+        // Open in new tab - Stripe blocks iframe embedding for security
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+        toast({
+          title: "Stripe Onboarding",
+          description: "Stripe onboarding opened in a new tab. Complete the setup there, then return here and click 'Refresh Status'.",
+        });
       } else {
         toast({
           title: "Error",
