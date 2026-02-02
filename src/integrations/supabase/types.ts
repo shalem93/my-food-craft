@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      chef_payouts: {
+        Row: {
+          amount_cents: number
+          chef_user_id: string
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          status: string
+          stripe_payout_id: string | null
+          stripe_transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          chef_user_id: string
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          status?: string
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          chef_user_id?: string
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          status?: string
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chef_profiles: {
         Row: {
           banner_image_url: string | null
