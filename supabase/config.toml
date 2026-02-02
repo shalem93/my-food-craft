@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.chef-analytics]
 verify_jwt = true
+
+[functions.chef-payout]
+verify_jwt = true
