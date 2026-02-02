@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PayoutSection } from "@/components/chef/PayoutSection";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -921,18 +922,21 @@ const ChefDashboard = () => {
 
                 <div className="rounded-xl border bg-card p-6 space-y-4 animate-fade-in">
                   <div>
-                    <p className="font-medium">Payouts via Stripe Connect</p>
+                    <p className="font-medium">Stripe Connect Setup</p>
                     <p className="text-sm text-muted-foreground">
-                      Status: {status ? (status.onboarding_complete ? "Onboarding complete" : "Action required") : "Unknown"}
+                      Status: {status ? (status.onboarding_complete ? "✓ Ready to accept payments" : "Action required") : "Loading..."}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Button onClick={startOnboarding} disabled={loading}>
-                      {loading ? "Redirecting..." : status?.onboarding_complete ? "Manage account" : "Set up payouts"}
+                      {loading ? "Redirecting..." : status?.onboarding_complete ? "Manage Stripe account" : "Set up payouts"}
                     </Button>
                     <Button variant="secondary" onClick={refreshStatus}>Refresh status</Button>
                   </div>
                 </div>
+
+                {/* Payout/Cash Out Section */}
+                <PayoutSection onboardingComplete={status?.onboarding_complete || false} />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                   <div className="rounded-lg border bg-card p-4">
