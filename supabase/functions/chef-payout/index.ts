@@ -109,6 +109,18 @@ serve(async (req) => {
       );
     }
 
+    if (action === "login-link") {
+      // Generate a login link for the Stripe Express Dashboard
+      const loginLink = await stripe.accounts.createLoginLink(
+        chefProfile.stripe_account_id
+      );
+
+      return new Response(
+        JSON.stringify({ url: loginLink.url }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "request-payout") {
       const { amount_cents, instant } = body;
 
