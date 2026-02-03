@@ -27,7 +27,7 @@ interface MenuItemRow {
   chef_user_id: string;
   name: string;
   description: string | null;
-  price_cents: number;
+  price: number | null;
   image_url: string | null;
   available: boolean;
   created_at: string;
@@ -338,6 +338,7 @@ const ChefDashboard = () => {
   };
 
   const dollars = (cents: number) => (cents / 100).toFixed(2);
+  const formatPrice = (price: number | null) => (price ?? 0).toFixed(2);
 
   const handleSaveAddress = async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -538,8 +539,8 @@ const ChefDashboard = () => {
     const uid = userData.user?.id;
     if (!uid) return;
 
-    const price_cents = Math.round(Number(form.price || 0) * 100);
-    if (!form.name || isNaN(price_cents)) {
+    const price = Number(form.price || 0);
+    if (!form.name || isNaN(price)) {
       toast({ description: "Please provide a name and valid price.", variant: "destructive" });
       return;
     }
@@ -558,7 +559,8 @@ const ChefDashboard = () => {
         chef_user_id: uid,
         name: form.name,
         description: form.description || null,
-        price_cents,
+        price,
+        price_cents: Math.round(price * 100), // Keep for backwards compatibility
         image_url: imageUrl || null,
         available: form.available,
       })
@@ -1240,7 +1242,7 @@ const ChefDashboard = () => {
                             <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                               {item.description}
                             </TableCell>
-                            <TableCell>${dollars(item.price_cents)}</TableCell>
+                            <TableCell>${formatPrice(item.price)}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Switch checked={item.available} onCheckedChange={() => toggleAvailability(item)} />
