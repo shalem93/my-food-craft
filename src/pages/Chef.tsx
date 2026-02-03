@@ -84,7 +84,7 @@ const ChefPage = () => {
           id: item.id,
           name: item.name,
           description: item.description || "",
-          price: item.price_cents / 100,
+          price: item.price ?? (item.price_cents / 100),
           image: item.image_url || "/placeholder.svg"
         }))
       });
