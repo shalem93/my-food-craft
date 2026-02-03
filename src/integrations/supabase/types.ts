@@ -128,6 +128,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          portions_available: number | null
           price_cents: number
           tags: string[] | null
           updated_at: string
@@ -140,6 +141,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          portions_available?: number | null
           price_cents: number
           tags?: string[] | null
           updated_at?: string
@@ -152,6 +154,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          portions_available?: number | null
           price_cents?: number
           tags?: string[] | null
           updated_at?: string
