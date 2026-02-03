@@ -127,6 +127,8 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          lat: number | null
+          lng: number | null
           name: string
           portions_available: number | null
           prep_time_minutes: number | null
@@ -142,6 +144,8 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          lat?: number | null
+          lng?: number | null
           name: string
           portions_available?: number | null
           prep_time_minutes?: number | null
@@ -157,6 +161,8 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          lat?: number | null
+          lng?: number | null
           name?: string
           portions_available?: number | null
           prep_time_minutes?: number | null
