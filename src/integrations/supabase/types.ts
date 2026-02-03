@@ -129,6 +129,7 @@ export type Database = {
           image_url: string | null
           name: string
           portions_available: number | null
+          prep_time_minutes: number | null
           price_cents: number
           tags: string[] | null
           updated_at: string
@@ -142,6 +143,7 @@ export type Database = {
           image_url?: string | null
           name: string
           portions_available?: number | null
+          prep_time_minutes?: number | null
           price_cents: number
           tags?: string[] | null
           updated_at?: string
@@ -155,6 +157,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           portions_available?: number | null
+          prep_time_minutes?: number | null
           price_cents?: number
           tags?: string[] | null
           updated_at?: string
