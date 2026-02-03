@@ -131,7 +131,7 @@ export type Database = {
           portions_available: number | null
           prep_time_minutes: number | null
           price: number | null
-          price_cents: number
+          price_cents: number | null
           tags: string[] | null
           updated_at: string
         }
@@ -146,7 +146,7 @@ export type Database = {
           portions_available?: number | null
           prep_time_minutes?: number | null
           price?: number | null
-          price_cents: number
+          price_cents?: number | null
           tags?: string[] | null
           updated_at?: string
         }
@@ -161,7 +161,7 @@ export type Database = {
           portions_available?: number | null
           prep_time_minutes?: number | null
           price?: number | null
-          price_cents?: number
+          price_cents?: number | null
           tags?: string[] | null
           updated_at?: string
         }
