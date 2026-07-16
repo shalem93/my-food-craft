@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://uyoemkwlccljqyigmcch.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "homemade-mcp",
+      "version": "0.1.0",
+      "title": "Homemade"
+    },
+    "tools": [
+      {
+        "name": "list_my_orders",
+        "title": "List my orders",
+        "description": "List orders placed by the signed-in Homemade customer, most recent first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max orders to return (default 10)."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optional order status filter, e.g. 'succeeded'."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_nearby_dishes",
+        "title": "Search nearby dishes",
+        "description": "Find available menu items from online chefs near the given coordinates.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "Latitude of the search origin."
+            },
+            "lng": {
+              "type": "number",
+              "description": "Longitude of the search origin."
+            },
+            "radius_miles": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Search radius in miles (default 15)."
+            },
+            "query": {
+              "type": "string",
+              "description": "Optional text to match in dish name or description."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max results (default 20)."
+            }
+          },
+          "required": [
+            "lat",
+            "lng"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_my_chef_profile",
+        "title": "Get my chef profile",
+        "description": "Return the signed-in chef's profile: display name, online status, pickup area, Stripe onboarding status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_menu_items",
+        "title": "List my menu items",
+        "description": "List menu items owned by the signed-in chef.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "only_available": {
+              "type": "boolean",
+              "description": "If true, only return items marked available."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_menu_item",
+        "title": "Create menu item",
+        "description": "Add a new menu item for the signed-in chef.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Dish name."
+            },
+            "price": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Price in dollars, e.g. 12.5."
+            },
+            "description": {
+              "type": "string"
+            },
+            "portions_available": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "prep_time_minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Tags like 'vegan', 'spicy'."
+            },
+            "available": {
+              "type": "boolean",
+              "description": "Whether the item is currently available (default true)."
+            }
+          },
+          "required": [
+            "name",
+            "price"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
