@@ -15,6 +15,8 @@ import OrderTracking from "./pages/OrderTracking";
 import ChefDashboard from "./pages/ChefDashboard";
 import Orders from "./pages/Orders";
 import OAuthConsent from "./pages/OAuthConsent";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -41,6 +43,8 @@ const App = () => (
                 <Route path="/payment-canceled" element={<PaymentCanceled />} />
                 <Route path="/order-tracking" element={<OrderTracking />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
