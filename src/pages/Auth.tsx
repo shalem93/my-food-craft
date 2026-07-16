@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, AppRole } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,22 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const Auth = () => {
   const { user, loading, userRole, signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Preserve `next` (e.g. OAuth consent) as a same-origin relative path only.
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
 
   useEffect(() => {
-    // Only redirect once we have both user and role
     if (!loading && user && userRole) {
+      if (nextPath) {
+        window.location.href = nextPath;
+        return;
+      }
       const destination = userRole === "chef" ? "/chef-dashboard" : "/";
       navigate(destination, { replace: true });
     }
-  }, [user, loading, userRole, navigate]);
+  }, [user, loading, userRole, navigate, nextPath]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -35,3 +35,7 @@ verify_jwt = true
 
 [functions.chef-payout]
 verify_jwt = true
+
+[functions.mcp]
+verify_jwt = false
+
